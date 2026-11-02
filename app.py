@@ -153,10 +153,12 @@ st.markdown("---")
 c1, c2 = st.columns(2)
 with c1:
     fig_t2 = BioTwinControlCharts.build_statistical_trend_chart(df_history, "t2_value", "t2_ucl", "Hotelling T² Latent Variability Metrics", "#0066CC")
-    st.plotly_chart(fig_t2, use_container_width="stretch")
+    # Added a distinct unique key string identifier to avoid structural DOM element clashes
+    st.plotly_chart(fig_t2, use_container_width="stretch", key="chart_hotelling_t2")
 with c2:
     fig_spe = BioTwinControlCharts.build_statistical_trend_chart(df_history, "spe_value", "spe_ucl", "Squared Prediction Error (SPE) Multi-Residual Trends", "#FF9900")
-    st.plotly_chart(fig_spe, use_container_width="stretch")
+    # Added a distinct unique key string identifier to avoid structural DOM element clashes
+    st.plotly_chart(fig_spe, use_container_width="stretch", key="chart_residual_spe")
 
 # -----------------------------------------------------------------------------
 # 6. AGENTIC AI DECISION-SUPPORT LAYER WITH API THROTTLING GUARD
