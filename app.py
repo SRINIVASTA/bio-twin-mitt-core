@@ -1,4 +1,4 @@
-# app.py [PART 1/2] - Initialization & User Interface Controls
+# app.py [PART 1/2] - Initialisation & User Interface Controls
 import sys
 import os
 
@@ -36,6 +36,8 @@ if "cached_diagnostic_report" not in st.session_state:
     st.session_state.cached_diagnostic_report = ""
 if "last_emailed_report_time" not in st.session_state:
     st.session_state.last_emailed_report_time = 0.0
+if "force_manual_email" not in st.session_state:
+    st.session_state.force_manual_email = False
 
 @st.cache_resource
 def setup_runtime_detector_and_agent():
@@ -63,7 +65,6 @@ with st.sidebar:
     st.header("🎛 Process Control Interface")
     if st.button("🚨 Inject Mechanical Agitation Anomaly", use_container_width="stretch"):
         st.session_state.fault_injected = True
-        # Instantly clear generator cache state to force fault propagation down the pipeline
         if "telemetry_stream" in st.session_state:
             del st.session_state["telemetry_stream"]
             
@@ -75,6 +76,12 @@ with st.sidebar:
         st.session_state.last_emailed_report_time = 0.0
         if "telemetry_stream" in st.session_state:
             del st.session_state["telemetry_stream"]
+        
+    st.markdown("---")
+    st.header("📨 Manual Distribution Override")
+    # MANUAL DISPATCH GATEWAY BUTTON: Forces the Groq summary compile on user demand
+    if st.button("📧 Dispatch Current State Report Now", use_container_width="stretch", type="primary"):
+        st.session_state.force_manual_email = True
         
     st.markdown("---")
     st.header("🤖 AI Agent Settings")
@@ -101,32 +108,27 @@ with st.sidebar:
             st.caption("Preparing data stream download channels...")
 # app.py [PART 2/2] - Live Telemetry Core Loops & Visualization Engines
 
-# ⚙️ ENTERPRISE GENERATOR MEMORY STATE TRACKER & CACHE GATES
+# Generator memory state layer tracking
 if "pi_simulator" not in st.session_state:
     st.session_state.pi_simulator = PIHistorianSimulator()
 
-# Keep track of the active fault state used to build the generator stream
 if "current_fault_state" not in st.session_state:
     st.session_state.current_fault_state = st.session_state.fault_injected
 
-# 🔄 DYNAMIC RE-INITIALIZATION GAGE: Reset the stream cleanly if the user toggled the fault mode
 if "telemetry_stream" not in st.session_state or st.session_state.current_fault_state != st.session_state.fault_injected:
     st.session_state.current_fault_state = st.session_state.fault_injected
     st.session_state.telemetry_stream = st.session_state.pi_simulator.stream_live_telemetry(
         inject_fault=st.session_state.fault_injected
     )
 
-# Pull the next real consecutive data tick from the persistent execution buffer trace
 try:
     latest_snapshot = next(st.session_state.telemetry_stream)
 except (StopIteration, KeyError, ValueError):
-    # Safe structural wrapper to rebuild the stream framework if data sequences clear out
     st.session_state.telemetry_stream = st.session_state.pi_simulator.stream_live_telemetry(
         inject_fault=st.session_state.fault_injected
     )
     latest_snapshot = next(st.session_state.telemetry_stream)
 
-# --- Keep the rest of your mathematical evaluation (input_vector, pca_detector) exactly as it was ---
 input_vector = np.array([[latest_snapshot.parameters[k] for k in GOLDEN_BATCH_TARGETS.keys()]])
 results = pca_detector.transform_and_evaluate(input_vector)
 
@@ -139,7 +141,6 @@ if simulation_active:
         "spe_ucl": results["spe_ucl"]
     })
 
-    # Synchronized with your custom 40-point buffer limit configuration boundary
     if len(st.session_state.metrics_history) > STATISTICAL_CONTROL_LIMITS["buffer_memory_limit"]:
         st.session_state.metrics_history.pop(0)
 
@@ -154,26 +155,22 @@ predictive_5min_alert = False
 estimated_minutes_to_breach = None
 target_metric_label = ""
 
-# Noise-filtered moving trend window optimized for 200ms sampling ticks
 if len(df_history) >= 15:
     sampling_interval = STATISTICAL_CONTROL_LIMITS.get("sampling_interval_seconds", 0.2)
     
     for val_col, ucl_col, name_str in [("t2_value", "t2_ucl", "Hotelling T²"), ("spe_value", "spe_ucl", "SPE Residual")]:
-        y = df_history[val_col].values[-15:] # 15-point history slice (3 seconds lookback)
+        y = df_history[val_col].values[-15:]
         x = np.arange(len(y)) * sampling_interval
         
-        # Calculate ordinary least squares slope trajectory
         slope, _ = np.polyfit(x, y, 1)
         current_val = y[-1]
         ucl_limit = df_history[ucl_col].values[-1]
         
-        # If tracking metrics are scaling upward toward the threshold line
         if slope > 0 and current_val < ucl_limit:
             remaining_gap = ucl_limit - current_val
             seconds_to_red_alert = remaining_gap / slope
             minutes_to_red_alert = seconds_to_red_alert / 60.0
             
-            # Catch if the projected crash timeline sits within the 5-minute envelope
             if 0.0 < minutes_to_red_alert <= 5.0:
                 predictive_5min_alert = True
                 estimated_minutes_to_breach = minutes_to_red_alert
@@ -205,24 +202,36 @@ with c2:
     st.plotly_chart(fig_spe, use_container_width="stretch", key="chart_residual_spe")
 
 # -----------------------------------------------------------------------------
-# 6. HYBRID ACTION LAYER: 1-MIN SUMMARY DIGEST & 5-MIN EMERGENCY OVERRIDE
+# 6. DUAL-CHANNEL EVENT INFRASTRUCTURE: 5-MIN ALERTS & MANUAL ON-DEMAND EMAILS
 # -----------------------------------------------------------------------------
 current_time = time.time()
-report_interval = STATISTICAL_CONTROL_LIMITS.get("report_interval_seconds", 60.0)
-
-# Compute elapsed delta times for both loops
-time_since_last_digest = current_time - st.session_state.last_emailed_report_time
 time_since_last_llm = current_time - st.session_state.last_llm_call_time
-
-# Setup explicit conditional triggers
-is_digest_window_reached = (time_since_last_digest >= report_interval)
 is_emergency_active = (active_red_alert or predictive_5min_alert)
+is_manual_requested = st.session_state.force_manual_email
 
 trigger_email = False
 email_mode_emergency = False
+email_mode_manual = False
 
-# CONDITION A: Immediate 5-Minute Predictive Anomaly Override (Bypasses 1-min timer)
-if is_emergency_active:
+# ⚡ CHANNEL 1: Manual User Request Button (Highest Interception Priority)
+if is_manual_requested:
+    if is_emergency_active:
+        alarm_type_label = []
+        if results["t2_alarm"]: alarm_type_label.append("Hotelling T² Active")
+        if results["spe_alarm"]: alarm_type_label.append("SPE Active")
+        if predictive_5min_alert and not active_red_alert: 
+            alarm_type_label.append(f"{target_metric_label} Predicted Anomaly")
+        active_label_string = "⚡ MANUAL REQ DURING: " + " & ".join(alarm_type_label)
+    else:
+        active_label_string = "🟢 MANUAL REQ: STABLE GOLDEN BATCH"
+        
+    trigger_email = True
+    email_mode_emergency = is_emergency_active
+    email_mode_manual = True
+    st.session_state.force_manual_email = False # Instantly reset flag state
+
+# 🔮 CHANNEL 2: Automated 5-Minute Predictive/Active Emergency Alert Override
+elif is_emergency_active:
     alarm_type_label = []
     if results["t2_alarm"]: alarm_type_label.append("Hotelling T² Active")
     if results["spe_alarm"]: alarm_type_label.append("SPE Active")
@@ -230,23 +239,16 @@ if is_emergency_active:
         alarm_type_label.append(f"{target_metric_label} Projected 5-Min Violation")
     active_label_string = " & ".join(alarm_type_label)
     
-    # Allow prompt regeneration if 30s rate throttle is clear or it's a completely new emergency report
+    # 30-second rate-limiting guard block to completely avoid token exceptions
     if time_since_last_llm >= 30.0 or not st.session_state.cached_diagnostic_report:
         trigger_email = True
         email_mode_emergency = True
 
-# CONDITION B: Routine 1-Minute Continuous Update Digest (Fires when system is steady)
-elif is_digest_window_reached or not st.session_state.cached_diagnostic_report:
-    active_label_string = "🟢 STABLE GOLDEN BATCH"
-    trigger_email = True
-    email_mode_emergency = False
-
-# Execute centralized AI calculation and email distribution
-if enable_llm_diagnostics and simulation_active and trigger_email:
+# Execute AI execution and unified notification dispatch parameters
+if enable_llm_diagnostics and (simulation_active or email_mode_manual) and trigger_email:
     if groq_agent is not None:
-        with st.spinner("Processing Hybrid Subsystem AI Diagnostics..."):
+        with st.spinner("Processing Event-Driven Subsystem AI Diagnostics..."):
             
-            # Pass parameters down to your custom prompt library overrides
             new_report = groq_agent.analyze_process_anomaly(
                 snapshot=latest_snapshot, 
                 statistical_metrics=results,
@@ -257,20 +259,22 @@ if enable_llm_diagnostics and simulation_active and trigger_email:
                 st.session_state.cached_diagnostic_report = new_report
                 st.session_state.last_llm_call_time = current_time
                 
-                # Route through unified hybrid dispatch service method
+                # Append structured identifier tag if user requested dispatch manually
+                subject_label = f"📝 [MANUAL SNAPSHOT] {active_label_string}" if email_mode_manual else active_label_string
+                
                 success = EnterpriseNotificationService.dispatch_hybrid_alert(
                     report_markdown=new_report,
-                    alarm_type=active_label_string,
+                    alarm_type=subject_label,
                     latest_parameters=latest_snapshot.parameters,
                     is_emergency=email_mode_emergency,
                     time_to_breach=estimated_minutes_to_breach if email_mode_emergency else None
                 )
                 
                 if success:
-                    if email_mode_emergency:
+                    if email_mode_manual:
+                        st.toast("⚡ On-demand system log securely compiled and emailed to stakeholders!")
+                    elif email_mode_emergency:
                         st.toast("🚨 IMMEDIATE 5-MIN CRITICAL OVERRIDE EMAIL DISPATCHED!")
-                    else:
-                        st.toast("📊 Routine 1-Minute Performance Digest Email Dispatched.")
                 
                 st.session_state.last_emailed_report_time = current_time
             else:
@@ -282,8 +286,7 @@ if enable_llm_diagnostics and simulation_active and trigger_email:
 if st.session_state.cached_diagnostic_report:
     st.info(st.session_state.cached_diagnostic_report)
     if simulation_active:
-        countdown = max(0.0, report_interval - (time.time() - st.session_state.last_emailed_report_time))
-        st.caption(f"⚙️ **Hybrid Monitor Engaged.** Standard 1-Min Digest refresh in: **{countdown:.1f}s**. *5-Min Predictive Interrupt Active 24/7.*")
+        st.caption("⚙️ **Event-Driven Monitor Engaged.** Inbox silent during steady-state. *5-Min Predictive Alerts & Manual Sidebar Dispatch Active 24/7.*")
     else:
         st.caption("⏸️ Simulation paused. Diagnostic reporting states frozen.")
 
