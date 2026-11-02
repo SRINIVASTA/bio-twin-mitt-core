@@ -101,29 +101,33 @@ with st.sidebar:
             st.caption("Preparing data stream download channels...")
 # app.py [PART 2/2] - Live Telemetry Core Loops & Visualization Engines
 
-# ⚙️ PERSISTENT STREAM LAYER: Encapsulate the generator pipeline so it doesn't drop index flags on st.rerun
+# ⚙️ ENTERPRISE GENERATOR MEMORY STATE TRACKER & CACHE GATES
 if "pi_simulator" not in st.session_state:
     st.session_state.pi_simulator = PIHistorianSimulator()
 
-if "telemetry_stream" not in st.session_state:
+# Keep track of the active fault state used to build the generator stream
+if "current_fault_state" not in st.session_state:
+    st.session_state.current_fault_state = st.session_state.fault_injected
+
+# 🔄 DYNAMIC RE-INITIALIZATION GAGE: Reset the stream cleanly if the user toggled the fault mode
+if "telemetry_stream" not in st.session_state or st.session_state.current_fault_state != st.session_state.fault_injected:
+    st.session_state.current_fault_state = st.session_state.fault_injected
     st.session_state.telemetry_stream = st.session_state.pi_simulator.stream_live_telemetry(
         inject_fault=st.session_state.fault_injected
     )
 
-# Pull the next sequential real-time data tick forward from the saved execution buffer trace
+# Pull the next real consecutive data tick from the persistent execution buffer trace
 try:
     latest_snapshot = next(st.session_state.telemetry_stream)
-except (StopIteration, KeyError):
-    # Safe fallback wrapper to refresh the logging trail pipeline cleanly if data buffers exhaust
+except (StopIteration, KeyError, ValueError):
+    # Safe structural wrapper to rebuild the stream framework if data sequences clear out
     st.session_state.telemetry_stream = st.session_state.pi_simulator.stream_live_telemetry(
         inject_fault=st.session_state.fault_injected
     )
     latest_snapshot = next(st.session_state.telemetry_stream)
 
-# Build features matrix matching config order
+# --- Keep the rest of your mathematical evaluation (input_vector, pca_detector) exactly as it was ---
 input_vector = np.array([[latest_snapshot.parameters[k] for k in GOLDEN_BATCH_TARGETS.keys()]])
-
-# Execute high-speed statistical control evaluation checks
 results = pca_detector.transform_and_evaluate(input_vector)
 
 if simulation_active:
