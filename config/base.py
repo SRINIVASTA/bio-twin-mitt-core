@@ -63,4 +63,5 @@ STATISTICAL_CONTROL_LIMITS: Dict[str, Any] = {
     "sampling_interval_seconds": 0.2  
 }
 
+# Verified active production model ID targeting Meta Llama 3.3 architecture
 GROQ_MODEL_TARGET: str = "llama-3.3-70b-versatile"
