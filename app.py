@@ -47,6 +47,15 @@ log_path = "data/processed/batch_state_audit_trail.csv"
 # 2. INTERFACE CONTROL SIDEBAR & TOGGLES
 # -----------------------------------------------------------------------------
 with st.sidebar:
+    st.header("🔄 Simulation Engine Control")
+    # Master Start / Stop Toggle Switch for the simulation execution pipeline
+    simulation_active = st.toggle(
+        label="Run Active Bioprocess Stream", 
+        value=True,
+        help="Turn off this switch to instantly freeze all telemetry loops, charts, and logging layers."
+    )
+    
+    st.markdown("---")
     st.header("🎛 Process Control Interface")
     if st.button("🚨 Inject Mechanical Agitation Anomaly", use_container_width="stretch"):
         st.session_state.fault_injected = True
@@ -66,7 +75,6 @@ with st.sidebar:
 
     st.markdown("---")
     st.header("📥 Data Export Options")
-    # Render native browser file download pathway if the log matrix is populated on disk
     if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
         try:
             df_download = pd.read_csv(log_path)
@@ -85,23 +93,17 @@ with st.sidebar:
 
     st.markdown("---")
     st.header("🧹 Cache & Log Management")
-    # Added clear cache utility button to wipe file systems instantly from the UI layer
     if st.button("🗑️ Clear Local Audit Log & Cache", use_container_width="stretch"):
-        # 1. Flush memory caches out of browser session variables
         st.session_state.metrics_history = []
         st.session_state.cached_diagnostic_report = ""
         st.session_state.last_llm_call_time = 0.0
         st.session_state.fault_injected = False
-        
-        # 2. Wipe the physical file storage asset off the server disk layout
         if os.path.exists(log_path):
             try:
                 os.remove(log_path)
                 st.success("Successfully deleted local historical audit file.")
             except Exception as e:
                 st.error(f"File erase locked: {str(e)}")
-        
-        # 3. Invoke internal Streamlit cache resource clearing routines
         st.cache_resource.clear()
         st.toast("Wiped application context caches clean!")
         time.sleep(1.0)
@@ -120,17 +122,21 @@ input_vector = np.array([[latest_snapshot.parameters[k] for k in GOLDEN_BATCH_TA
 # Execute high-speed statistical control evaluation checks
 results = pca_detector.transform_and_evaluate(input_vector)
 
-# Track values over time for dashboard visualization charts
-st.session_state.metrics_history.append({
-    "timestamp": latest_snapshot.timestamp, 
-    "t2_value": results["t2_value"], 
-    "t2_ucl": results["t2_ucl"],
-    "spe_value": results["spe_value"], 
-    "spe_ucl": results["spe_ucl"]
-})
+# Track values over time for dashboard visualization charts only if simulation is actively running
+if simulation_active:
+    st.session_state.metrics_history.append({
+        "timestamp": latest_snapshot.timestamp, 
+        "t2_value": results["t2_value"], 
+        "t2_ucl": results["t2_ucl"],
+        "spe_value": results["spe_value"], 
+        "spe_ucl": results["spe_ucl"]
+    })
 
-if len(st.session_state.metrics_history) > STATISTICAL_CONTROL_LIMITS["buffer_memory_limit"]:
-    st.session_state.metrics_history.pop(0)
+    if len(st.session_state.metrics_history) > STATISTICAL_CONTROL_LIMITS["buffer_memory_limit"]:
+        st.session_state.metrics_history.pop(0)
+
+    # Automatically saves the historical row tracking states down into your local data folder
+    BioTwinStatusSystem.log_process_state_to_file(latest_snapshot.parameters, results)
 
 df_history = pd.DataFrame(st.session_state.metrics_history)
 
@@ -139,9 +145,6 @@ df_history = pd.DataFrame(st.session_state.metrics_history)
 # -----------------------------------------------------------------------------
 BioTwinStatusSystem.render_process_status_header(results)
 BioTwinStatusSystem.render_parameter_metrics_grid(latest_snapshot.parameters)
-
-# Automatically saves the historical row tracking states down into your local data folder
-BioTwinStatusSystem.log_process_state_to_file(latest_snapshot.parameters, results)
 
 # -----------------------------------------------------------------------------
 # 5. CONTROL LIMIT VISUALIZATIONS (PLOTLY CHARTS)
@@ -165,7 +168,8 @@ if results["t2_alarm"] or results["spe_alarm"]:
         current_time = time.time()
         time_elapsed_since_last_call = current_time - st.session_state.last_llm_call_time
         
-        if time_elapsed_since_last_call > 30.0 or not st.session_state.cached_diagnostic_report:
+        # Only call the LLM if the simulation is active to prevent static infinite loops
+        if simulation_active and (time_elapsed_since_last_call > 30.0 or not st.session_state.cached_diagnostic_report):
             if groq_agent is not None:
                 with st.spinner("Invoking low-latency diagnostic calculation steps..."):
                     new_report = groq_agent.analyze_process_anomaly(latest_snapshot, results)
@@ -180,7 +184,10 @@ if results["t2_alarm"] or results["spe_alarm"]:
         
         if st.session_state.cached_diagnostic_report:
             st.info(st.session_state.cached_diagnostic_report)
-            st.caption(f"⏱️ Diagnostic report locked. Next token window refresh available in: {max(0.0, 30.0 - time_elapsed_since_last_call):.1f}s")
+            if simulation_active:
+                st.caption(f"⏱️ Diagnostic report locked. Next token window refresh available in: {max(0.0, 30.0 - time_elapsed_since_last_call):.1f}s")
+            else:
+                st.caption("⏸️ Simulation paused. Diagnostic state frozen.")
     else:
         st.caption("LLM Analysis is currently paused via the sidebar toggle checkbox control.")
 
@@ -199,6 +206,11 @@ if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
 else:
     st.caption("Awaiting initial file generation sequences. System loop logging is running silently.")
 
-# Pause based on config values, then rerun frontend view automatically
-time.sleep(STATISTICAL_CONTROL_LIMITS["sampling_interval_seconds"])
-st.rerun()
+# -----------------------------------------------------------------------------
+# 8. RERUN LOOP OR FREEZE CONTROL
+# -----------------------------------------------------------------------------
+if simulation_active:
+    time.sleep(STATISTICAL_CONTROL_LIMITS["sampling_interval_seconds"])
+    st.rerun()
+else:
+    st.info("⏸️ Bioprocess stream engine is currently frozen. Turn on the switch in the sidebar to resume.")
