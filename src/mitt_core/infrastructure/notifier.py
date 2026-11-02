@@ -7,7 +7,7 @@ import streamlit as st
 
 class EnterpriseNotificationService:
     """
-    Production-grade notification middleware handling multi-channel alert delivery 
+    Enterprise-grade notification middleware handling multi-channel alert delivery 
     with configuration injection from secure environment storage.
     """
     
@@ -15,7 +15,7 @@ class EnterpriseNotificationService:
     def dispatch_gmail_alert(report_markdown: str, alarm_type: str, time_to_breach_min: float = None) -> bool:
         """
         Directly routes structured reports to designated stakeholders using 
-        a validated Google SMTP App Relay. Isolates all HTML styling from the UI layer.
+        a validated Google SMTP App Relay. Isolates HTML styling from the UI layer.
         """
         try:
             # Safely fetch credentials from Streamlit's native encrypted secrets vault
@@ -36,13 +36,13 @@ class EnterpriseNotificationService:
             msg['From'] = sender
             msg['To'] = ", ".join(recipients)
             
-            # Contextual structural subject line assignment
+            # Assign a contextual subject line based on real-time or predictive state
             if time_to_breach_min is not None:
                 msg['Subject'] = f"🔮 PREDICTIVE ALERT: Red Line Anomaly Expected within {time_to_breach_min:.1f} Mins!"
             else:
                 msg['Subject'] = f"🚨 GxP CRITICAL BREACH: {alarm_type} Anomaly Actively Tripped"
 
-            # Clean, encapsulated enterprise HTML template layout
+            # Encapsulated enterprise HTML template layout
             body = f"""
             <html>
               <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px;">
