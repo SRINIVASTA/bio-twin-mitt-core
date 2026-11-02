@@ -181,72 +181,92 @@ with c2:
     st.plotly_chart(fig_spe, use_container_width="stretch", key="chart_residual_spe")
 
 # -----------------------------------------------------------------------------
-# 6. AGENTIC AI DECISION-SUPPORT LAYER WITH DECOUPLED INFRASTRUCTURE EMAIL LINK
+# 6. HYBRID ACTION LAYER: 1-MIN SUMMARY DIGEST & 5-MIN EMERGENCY OVERRIDE
 # -----------------------------------------------------------------------------
-if is_system_emergency:
-    st.markdown("### 🤖 Groq Autonomous LLM Diagnostic Hub")
-    
+st.markdown("### 🤖 Groq Autonomous LLM Diagnostic Hub")
+
+current_time = time.time()
+report_interval = STATISTICAL_CONTROL_LIMITS.get("report_interval_seconds", 60.0)
+
+# Compute elapsed delta times for both loops
+time_since_last_digest = current_time - st.session_state.last_emailed_report_time
+time_since_last_llm = current_time - st.session_state.last_llm_call_time
+
+# Setup explicit conditional triggers
+is_digest_window_reached = (time_since_last_digest >= report_interval)
+is_emergency_active = (results["t2_alarm"] or results["spe_alarm"] or predictive_5min_alert)
+
+# Base flag variables to assign execution behavior
+trigger_email = False
+email_mode_emergency = False
+
+# 🛑 CONDITION A: Immediate 5-Minute Predictive Anomaly Override (Overrides 1-min timer)
+if is_emergency_active:
     alarm_type_label = []
     if results["t2_alarm"]: alarm_type_label.append("Hotelling T² Active")
     if results["spe_alarm"]: alarm_type_label.append("SPE Active")
-    if predictive_5min_alert and not active_red_alert: alarm_type_label.append(f"{target_metric_label} Predicted 5-Min Anomaly")
-    active_alarm_string = " & ".join(alarm_type_label)
+    if predictive_5min_alert and not (results["t2_alarm"] or results["spe_alarm"]): 
+        alarm_type_label.append(f"{target_metric_label} Projected 5-Min Violation")
+    active_label_string = " & ".join(alarm_type_label)
+    
+    # Allow prompt regeneration if 30s rate throttle is clear or it's a completely new emergency report
+    if time_since_last_llm >= 30.0 or not st.session_state.cached_diagnostic_report:
+        trigger_email = True
+        email_mode_emergency = True
 
-    if enable_llm_diagnostics:
-        current_time = time.time()
-        time_elapsed_since_last_call = current_time - st.session_state.last_llm_call_time
-        
-        if simulation_active and (time_elapsed_since_last_call > 30.0 or not st.session_state.cached_diagnostic_report):
-            if groq_agent is not None:
-                with st.spinner("Invoking low-latency predictive diagnostic calculation steps..."):
-                    new_report = groq_agent.analyze_process_anomaly(latest_snapshot, results)
-                    
-                    if "Failed to execute" not in new_report and "Rate limit reached" not in new_report:
-                        st.session_state.cached_diagnostic_report = new_report
-                        st.session_state.last_llm_call_time = current_time
-                        
-                        # Decoupled notification microservice invocation link
-                        if st.session_state.last_emailed_report_time != current_time:
-                            success = EnterpriseNotificationService.dispatch_gmail_alert(
-                                report_markdown=new_report, 
-                                alarm_type=active_alarm_string, 
-                                time_to_breach_min=estimated_minutes_to_breach
-                            )
-                            if success:
-                                st.toast("📩 Automatic early-intervention alert dispatched via notification engine.")
-                            st.session_state.last_emailed_report_time = current_time
+# 🟢 CONDITION B: Routine 1-Minute Continuous Update Digest (Fires when system is steady)
+elif is_digest_window_reached or not st.session_state.cached_diagnostic_report:
+    active_label_string = "🟢 STABLE GOLDEN BATCH"
+    trigger_email = True
+    email_mode_emergency = False
+
+# Execute centralized AI execution and email distribution
+if enable_llm_diagnostics and simulation_active and trigger_email:
+    if groq_agent is not None:
+        with st.spinner("Processing Hybrid Subsystem AI Diagnostics..."):
+            
+            # Pass estimated lookup minute variables down to custom prompt library overrides
+            new_report = groq_agent.analyze_process_anomaly(
+                snapshot=latest_snapshot, 
+                statistical_metrics=results,
+                time_to_breach_min=estimated_minutes_to_breach if email_mode_emergency else None
+            )
+            
+            if "Failed to execute" not in new_report and "Rate limit reached" not in new_report:
+                st.session_state.cached_diagnostic_report = new_report
+                st.session_state.last_llm_call_time = current_time
+                
+                # Route through unified hybrid dispatch service method
+                success = EnterpriseNotificationService.dispatch_hybrid_alert(
+                    report_markdown=new_report,
+                    alarm_type=active_label_string,
+                    latest_parameters=latest_snapshot.parameters,
+                    is_emergency=email_mode_emergency,
+                    time_to_breach=estimated_minutes_to_breach if email_mode_emergency else None
+                )
+                
+                if success:
+                    if email_mode_emergency:
+                        st.toast("🚨 IMMEDIATE 5-MIN CRITICAL OVERRIDE EMAIL DISPATCHED!")
                     else:
-                        st.error(new_report)
+                        st.toast("📊 Routine 1-Minute Performance Digest Email Dispatched.")
+                
+                # Track update windows dynamically
+                if email_mode_emergency:
+                    # Sync-lock timers so an active emergency counts as the latest digest update
+                    st.session_state.last_emailed_report_time = current_time
+                else:
+                    st.session_state.last_emailed_report_time = current_time
             else:
-                st.warning("Groq Client framework offline. Configure GROQ_API_KEY environment variable token.")
-        
-        if st.session_state.cached_diagnostic_report:
-            st.info(st.session_state.cached_diagnostic_report)
-            if simulation_active:
-                st.caption(f"⏱️ Diagnostic report locked. Next token window refresh available in: {max(0.0, 30.0 - time_elapsed_since_last_call):.1f}s")
-            else:
-                st.caption("⏸️ Simulation paused. Diagnostic state frozen.")
+                st.error(new_report)
+    else:
+        st.warning("Groq Client framework offline. Configure GROQ_API_KEY environment variable token.")
 
-# -----------------------------------------------------------------------------
-# 7. HISTORICAL BATCH AUDIT FILE VIEWER LAYER
-# -----------------------------------------------------------------------------
-st.markdown("---")
-st.subheader("📋 Historical Batch Audit File Viewer (`data/processed/`)")
-
-if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
-    try:
-        df_audit = pd.read_csv(log_path)
-        st.dataframe(df_audit.tail(15), use_container_width="stretch")
-    except Exception:
-        st.caption("Refreshing data log file registers...")
-else:
-    st.caption("Awaiting initial file generation sequences. System loop logging is running silently.")
-
-# -----------------------------------------------------------------------------
-# 8. RERUN LOOP OR FREEZE CONTROL
-# -----------------------------------------------------------------------------
-if simulation_active:
-    time.sleep(STATISTICAL_CONTROL_LIMITS["sampling_interval_seconds"])
-    st.rerun()
-else:
-    st.info("⏸️ Bioprocess stream engine is currently frozen. Turn on the switch in the sidebar to resume.")
+# Render whatever report is currently cached in memory on the UI layout
+if st.session_state.cached_diagnostic_report:
+    st.info(st.session_state.cached_diagnostic_report)
+    if simulation_active:
+        countdown = max(0.0, report_interval - (time.time() - st.session_state.last_emailed_report_time))
+        st.caption(f"⚙️ **Hybrid Monitor Engaged.** Standard 1-Min Digest refresh in: **{countdown:.1f}s**. *5-Min Predictive Interrupt Active 24/7.*")
+    else:
+        st.caption("⏸️ Simulation paused. Diagnostic reporting states frozen.")
