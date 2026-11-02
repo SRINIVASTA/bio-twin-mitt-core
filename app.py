@@ -38,7 +38,7 @@ pca_detector, groq_agent = setup_runtime_detector_and_agent()
 
 with st.sidebar:
     st.header("🎛 Process Control Interface")
-    # Updated to width='stretch' to meet API compliance rules
+    # Cleaned parameter width='stretch'
     if st.button("🚨 Inject Mechanical Agitation Anomaly", width='stretch'):
         st.session_state.fault_injected = True
     if st.button("🟢 Reset to Normal Golden Envelope Conditions", width='stretch'):
@@ -81,7 +81,6 @@ if results["t2_alarm"] or results["spe_alarm"]:
     else:
         st.warning("Groq Client framework offline. Configure GROQ_API_KEY environment variable token to populate this data feed.")
 
-time_delay = STATISTICAL_CONTROL_LIMITS["sampling_interval_seconds"]
 import time
-time.sleep(time_delay)
+time.sleep(STATISTICAL_CONTROL_LIMITS["sampling_interval_seconds"])
 st.rerun()
