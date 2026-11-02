@@ -1,3 +1,14 @@
+# bio-twin-mitt-core
+
+This repository serves as the core framework for implementing advanced AI, latent variable soft sensors, and agentic decision-support workflows within a pharmaceutical manufacturing context (Pharma 4.0). 
+
+The architecture is explicitly designed to handle high-frequency IIoT streams, interface with manufacturing historians, leverage knowledge graphs for automated Standard Operating Procedure (SOP) compliance, and run multi-variable statistical process control (MSPC).
+
+---
+
+## Repository Tree
+
+```text
 bio-twin-mitt-core/
 │
 ├── .github/
@@ -86,3 +97,25 @@ bio-twin-mitt-core/
 ├── pyproject.toml                     # Poetry ecosystem / tool parameters
 ├── README.md                          # Technical deployment and operational runbook
 └── requirements.txt                   # Pinned build packages
+```
+
+---
+
+## Core System Architecture Breakdown
+
+### 🤖 Agentic AI Subsystem (`src/mitt_core/agents/`)
+* **`engine.py`:** Manages the state machine and autonomous execution loop. Evaluates streaming process parameters against encoded recipes.
+* **`prompts.py`:** Houses systemic guidelines, critical boundary criteria, and strict regulatory limits. Ensures the LLM engine strictly acts as a decision support layer without violating baseline guardrails.
+* **`tools/`:** Provides the agent with actionable execution interfaces. `pi_system.py` maps semantic agent queries directly onto physical or simulated operational telemetry tags, while `kg_connector.py` maps knowledge relationships.
+
+### 🏭 Enterprise Domain & Business Logic (`src/mitt_core/domain/`)
+* **`knowledge_graph.py`:** Implements abstract node-edge relationships defining critical process parameters (CPPs), critical quality attributes (CQAs), equipment configurations, and inter-batch processing limits.
+* **`telemetry.py`:** Leverages strict Pydantic schemas to validate data parsing layers. Ensures all streaming datasets conform to strict sensor payload layouts before hitting analytical engines.
+
+### 🌐 IIoT & External Cloud Interfaces (`src/mitt_core/infrastructure/`)
+* **`telemetry_pi.py`:** Simulates a high-frequency PI Historian server data-stream. Feeds real-time multi-variable snapshots into operational loops.
+* **`snowflake_db.py`:** Orchestrates analytical querying structures against enterprise cloud instances to retrieve historical batch footprints.
+* **`aws_sagemaker.py`:** Manages analytical loop training updates, tracking operational parameter states and managing real-time inferences.
+
+### 📈 Soft Sensors & Machine Learning (`src/mitt_core/models/`)
+* **`pca_detector.py`:** Principal Component Analysis (PCA) multi-variable monitoring engine. Projects high-dimensional sensor environments (e.g., spectroscopy arrays) onto low-dimensional latent spaces to monitor Hotelling’s T² and Squared Prediction Error (SPE) bounds.
