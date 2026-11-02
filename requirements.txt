@@ -13,8 +13,8 @@ groq>=0.9.0                # Low-latency inference client execution framework
 
 # --- Enterprise Cloud Infrastructure Mappings ---
 pydantic>=1.10.15          # Strict telemetry contract data validations
-boto3>=1.34.120            # AWS ECR & SageMaker model integration interface
-snowflake-connector-python[secure-local-storage]>=3.10.0  # Enterprise warehousing
 
 # --- Verification & Testing Subsystem ---
 pytest>=8.2.0              # High-frequency math and tool integration validations
+black>=24.4.2              # PEP8 automated structural formatting tool
+flake8>=7.0.0              # Code compilation sanity linter
