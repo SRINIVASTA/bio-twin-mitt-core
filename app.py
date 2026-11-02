@@ -38,9 +38,10 @@ pca_detector, groq_agent = setup_runtime_detector_and_agent()
 
 with st.sidebar:
     st.header("🎛 Process Control Interface")
-    if st.button("🚨 Inject Mechanical Agitation Anomaly", use_container_width=True):
+    # Updated to width='stretch' to meet API compliance rules
+    if st.button("🚨 Inject Mechanical Agitation Anomaly", width='stretch'):
         st.session_state.fault_injected = True
-    if st.button("🟢 Reset to Normal Golden Envelope Conditions", use_container_width=True):
+    if st.button("🟢 Reset to Normal Golden Envelope Conditions", width='stretch'):
         st.session_state.fault_injected = False
         st.session_state.metrics_history = []
 
@@ -68,9 +69,9 @@ BioTwinStatusSystem.render_parameter_metrics_grid(latest_snapshot.parameters)
 st.markdown("---")
 c1, c2 = st.columns(2)
 with c1:
-    st.plotly_chart(BioTwinControlCharts.build_statistical_trend_chart(df_history, "t2_value", "t2_ucl", "Hotelling T² Latent Variability Metrics", "#0066CC"), use_container_width=True)
+    st.plotly_chart(BioTwinControlCharts.build_statistical_trend_chart(df_history, "t2_value", "t2_ucl", "Hotelling T² Latent Variability Metrics", "#0066CC"), width='stretch')
 with c2:
-    st.plotly_chart(BioTwinControlCharts.build_statistical_trend_chart(df_history, "spe_value", "spe_ucl", "Squared Prediction Error (SPE) Multi-Residual Trends", "#FF9900"), use_container_width=True)
+    st.plotly_chart(BioTwinControlCharts.build_statistical_trend_chart(df_history, "spe_value", "spe_ucl", "Squared Prediction Error (SPE) Multi-Residual Trends", "#FF9900"), width='stretch')
 
 if results["t2_alarm"] or results["spe_alarm"]:
     st.markdown("### 🤖 Groq Autonomous LLM Diagnostic Hub")
