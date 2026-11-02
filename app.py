@@ -11,13 +11,15 @@ from src.mitt_core.agents.engine import GroqBioprocessAgentEngine
 from src.ui.components.charts import BioTwinControlCharts
 from src.ui.components.status import BioTwinStatusSystem
 from config.base import STATISTICAL_CONTROL_LIMITS, GOLDEN_BATCH_TARGETS, GOLDEN_BATCH_SIGMAS
+
+# Import the decoupled enterprise notifier layer
 from src.mitt_core.infrastructure.notifier import EnterpriseNotificationService
 
 st.set_page_config(page_title="Pfizer MITT Bio Twin Console", page_icon="🧬", layout="wide")
 st.title("🧬 Bio-Twin Operational Execution Console")
 st.caption("Manufacturing Intelligence & Technology Transformation Framework Layer")
 
-# Initialize session state variables
+# Initialize session parameters to maintain tracking registers across high-speed loops
 if "metrics_history" not in st.session_state:
     st.session_state.metrics_history = []
 if "fault_injected" not in st.session_state:
@@ -31,6 +33,7 @@ if "last_emailed_report_time" not in st.session_state:
 
 @st.cache_resource
 def setup_runtime_detector_and_agent():
+    """Initializes self-contained inference adapters with zero runtime memory lag."""
     detector = PCABioprocessDetector(n_components=STATISTICAL_CONTROL_LIMITS["pca_n_components"])
     try:
         agent = GroqBioprocessAgentEngine()
@@ -43,7 +46,11 @@ log_path = "data/processed/batch_state_audit_trail.csv"
 
 with st.sidebar:
     st.header("🔄 Simulation Engine Control")
-    simulation_active = st.toggle("Run Active Bioprocess Stream", value=True)
+    simulation_active = st.toggle(
+        label="Run Active Bioprocess Stream", 
+        value=True,
+        help="Turn off this switch to instantly freeze all telemetry loops, charts, and logging layers."
+    )
     
     st.markdown("---")
     st.header("🎛 Process Control Interface")
@@ -58,7 +65,11 @@ with st.sidebar:
         
     st.markdown("---")
     st.header("🤖 AI Agent Settings")
-    enable_llm_diagnostics = st.checkbox("Enable Groq LLM Analysis", value=True)
+    enable_llm_diagnostics = st.checkbox(
+        label="Enable Groq LLM Analysis", 
+        value=True,
+        help="Uncheck this box to pause automated LLM diagnostic requests during active process alarms."
+    )
 
     st.markdown("---")
     st.header("📥 Data Export Options")
@@ -66,7 +77,13 @@ with st.sidebar:
         try:
             df_download = pd.read_csv(log_path)
             csv_bytes = df_download.to_csv(index=False).encode('utf-8')
-            st.download_button("📥 Download Audit Log CSV", data=csv_bytes, file_name="batch_state_audit_trail.csv", mime="text/csv", use_container_width="stretch")
+            st.download_button(
+                label="📥 Download Audit Log CSV",
+                data=csv_bytes,
+                file_name="batch_state_audit_trail.csv",
+                mime="text/csv",
+                use_container_width="stretch"
+            )
         except Exception:
             st.caption("Preparing data stream download channels...")
 # app.py [PART 2/2] - Live Telemetry Core Loops & Visualization Engines
@@ -75,7 +92,10 @@ simulator = PIHistorianSimulator()
 stream = simulator.stream_live_telemetry(inject_fault=st.session_state.fault_injected)
 latest_snapshot = next(stream)
 
+# Build features matrix matching config order
 input_vector = np.array([[latest_snapshot.parameters[k] for k in GOLDEN_BATCH_TARGETS.keys()]])
+
+# Execute high-speed statistical control evaluation checks
 results = pca_detector.transform_and_evaluate(input_vector)
 
 if simulation_active:
@@ -87,6 +107,7 @@ if simulation_active:
         "spe_ucl": results["spe_ucl"]
     })
 
+    # Synchronized with your custom 40-point buffer limit configuration boundary
     if len(st.session_state.metrics_history) > STATISTICAL_CONTROL_LIMITS["buffer_memory_limit"]:
         st.session_state.metrics_history.pop(0)
 
@@ -101,12 +122,12 @@ predictive_5min_alert = False
 estimated_minutes_to_breach = None
 target_metric_label = ""
 
-# Establish tracking velocity using a historical linear slope window
-if len(df_history) >= 5:
-    sampling_interval = STATISTICAL_CONTROL_LIMITS.get("sampling_interval_seconds", 1.0)
+# Noise-filtered moving trend window optimized for 200ms sampling ticks
+if len(df_history) >= 15:
+    sampling_interval = STATISTICAL_CONTROL_LIMITS.get("sampling_interval_seconds", 0.2)
     
     for val_col, ucl_col, name_str in [("t2_value", "t2_ucl", "Hotelling T²"), ("spe_value", "spe_ucl", "SPE Residual")]:
-        y = df_history[val_col].values[-5:]
+        y = df_history[val_col].values[-15:] # 15-point history slice (3 seconds lookback)
         x = np.arange(len(y)) * sampling_interval
         
         # Calculate ordinary least squares slope trajectory
@@ -127,7 +148,6 @@ if len(df_history) >= 5:
                 target_metric_label = name_str
                 break
 
-# Combine active real-time breach triggers with our predictive early warning trigger
 active_red_alert = results["t2_alarm"] or results["spe_alarm"]
 is_system_emergency = active_red_alert or predictive_5min_alert
 
@@ -178,7 +198,7 @@ if is_system_emergency:
                         st.session_state.cached_diagnostic_report = new_report
                         st.session_state.last_llm_call_time = current_time
                         
-                        # Decoupled notification service call triggers here
+                        # Decoupled notification microservice invocation link
                         if st.session_state.last_emailed_report_time != current_time:
                             success = EnterpriseNotificationService.dispatch_gmail_alert(
                                 report_markdown=new_report, 
