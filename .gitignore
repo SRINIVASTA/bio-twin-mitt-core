@@ -1,0 +1,16 @@
+# Local credential files containing sensitive API tokens
+.streamlit/secrets.toml
+.env
+
+# Compiled bytecode footprints
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Locally compiled serialization artifacts or local model storage containers
+models/
+*.pkl
+data/processed/*
+!data/processed/.gitkeep
