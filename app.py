@@ -1,9 +1,15 @@
 # app.py [PART 1/2] - Initialization & User Interface Controls
+import sys
+import os
+
+# 👇 FORCE ABSOLUTE PATH REGISTRATION FOR REPOSITORY ROOT
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# --- Now keep your existing imports exactly as they were ---
 import streamlit as st
 import numpy as np
 import pandas as pd
 import time
-import os
 
 from src.mitt_core.infrastructure.telemetry_pi import PIHistorianSimulator
 from src.mitt_core.models.pca_detector import PCABioprocessDetector
@@ -14,6 +20,7 @@ from config.base import STATISTICAL_CONTROL_LIMITS, GOLDEN_BATCH_TARGETS, GOLDEN
 
 # Import the decoupled enterprise notifier layer
 from src.mitt_core.infrastructure.notifier import EnterpriseNotificationService
+
 
 st.set_page_config(page_title="Pfizer MITT Bio Twin Console", page_icon="🧬", layout="wide")
 st.title("🧬 Bio-Twin Operational Execution Console")
