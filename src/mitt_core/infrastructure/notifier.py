@@ -7,12 +7,13 @@ import streamlit as st
 
 class EnterpriseNotificationService:
     """
-    Production-grade hybrid notification service handling both periodic summaries 
-    and immediate high-priority predictive emergency overrides.
+    Production-grade notification middleware handling regular cron-style digests
+    and automated operational tracking summaries over validated SMTP channels.
     """
     
     @st.cache_data(ttl=60)
     def build_summary_table(latest_parameters: dict) -> str:
+        """Generates a clean HTML table displaying current parameter statuses."""
         rows = "".join([
             f"<tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>{k}</b></td>"
             f"<td style='padding: 8px; border-bottom: 1px solid #ddd; text-align: right;'>{v:.3f}</td></tr>"
@@ -26,19 +27,31 @@ class EnterpriseNotificationService:
         Routes either routine digests or immediate trajectory breach warnings to stakeholders.
         """
         try:
+            # Check for secrets block presence matching your working schema parameters
             if "gmail" not in st.secrets:
+                st.error("⚠️ Notification Layer Failed: [gmail] config block missing from secrets.toml.")
                 return False
                 
             gmail_secrets = st.secrets["gmail"]
-            sender = gmail_secrets["SENDER_EMAIL"]
-            password = gmail_secrets["APP_PASSWORD"]
-            recipients = gmail_secrets["RECIPIENTS"]
-
-            msg = MIMEMultipart()
-            msg['From'] = sender
-            msg['To'] = ", ".join(recipients)
             
-            # 1. Structural assignment depending on whether an override or periodic ticket triggered
+            # 👇 FIXED MAPS: Adjusted to use your proven, working secrets keys
+            email_sender = gmail_secrets["username"]
+            app_password = gmail_secrets["app_password"]
+            
+            # Use recipients array if present, fallback cleanly to your sender if not declared
+            recipient_list = gmail_secrets.get("RECIPIENTS", [email_sender])
+            if isinstance(recipient_list, str):
+                recipient_list = [e.strip() for e in recipient_list.split(",") if e.strip()]
+
+            smtp_server = "smtp.gmail.com"
+            smtp_port = 587
+
+            # Assemble cross-platform multipart container
+            msg = MIMEMultipart()
+            msg['From'] = email_sender
+            msg['To'] = ", ".join(recipient_list)
+            
+            # Structural assignment depending on whether an override or periodic ticket triggered
             if is_emergency:
                 time_context = f"within {time_to_breach:.1f} mins" if time_to_breach else "Imminent"
                 msg['Subject'] = f"🚨 GxP CRITICAL BOUNDARY RISK: {alarm_type} Anomaly Expected {time_context}!"
@@ -48,11 +61,11 @@ class EnterpriseNotificationService:
                 header_title = "🔮 Predictive Early-Intervention Emergency Overrides"
                 sub_text = "CRITICAL ACTION REQUIRED: The forecasting engine has identified an immediate boundary collapse trajectory."
             else:
-                msg['Subject'] = f"📊 1-Min Bioprocess Performance Digest: {alarm_type}"
+                msg['Subject'] = f"📝 [MANUAL SNAPSHOT] {alarm_type}"
                 banner_color = "#f0fdf4" if "STABLE" in alarm_type else "#fff5f5"
                 text_color = "#166534" if "STABLE" in alarm_type else "#991b1b"
                 border_color = "#16a34a" if "STABLE" in alarm_type else "#dc2626"
-                header_title = "📋 Routine 60-Second Process Performance Summary"
+                header_title = "📋 Manual Process Performance Summary Snapshot"
                 sub_text = "Continuous automated telemetry analytics insight transmission packet."
 
             param_table = EnterpriseNotificationService.build_summary_table(latest_parameters)
@@ -92,12 +105,16 @@ class EnterpriseNotificationService:
             """
             msg.attach(MIMEText(body, 'html'))
 
-            with smtplib.SMTP("://gmail.com", 587) as server:
-                server.starttls() 
-                server.login(sender, password)
-                server.send_message(msg)
+            # Establish explicit connection matching your working code structures
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls() 
+            server.login(email_sender, app_password)
+            server.sendmail(email_sender, recipient_list, msg.as_string())
+            server.quit()
+            
             return True
 
         except Exception as e:
-            print(f"[❌ EnterpriseNotificationService Hybrid Error]: {str(e)}")
+            # Force the raw network error to pop up right on your active dashboard screen if it slips
+            st.error(f"🚨 SMTP Transmission Layer Faulted: {str(e)}")
             return False
