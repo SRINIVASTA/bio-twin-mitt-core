@@ -1,12 +1,14 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-from datetime import datetime
-import plotly.graph_objects as go
 
 from src.mitt_core.infrastructure.telemetry_pi import PIHistorianSimulator
 from src.mitt_core.models.pca_detector import PCABioprocessDetector
 from src.mitt_core.agents.engine import GroqBioprocessAgentEngine
+
+# Import your newly created custom modular UI components
+from src.ui.components.charts import BioTwinControlCharts
+from src.ui.components.status import BioTwinStatusSystem
 
 # -----------------------------------------------------------------------------
 # 1. STREAMLIT UI CONFIGURATION & STATE INITIALIZATION
@@ -118,58 +120,59 @@ df_history = pd.DataFrame(st.session_state.metrics_history)
 # -----------------------------------------------------------------------------
 # 5. LIVE METRICS & PLOTLY DASHBOARD RENDERING
 # -----------------------------------------------------------------------------
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("🧪 Active Batch", latest_snapshot.batch_id)
-col2.metric("⏱ Age (Hours)", f"{latest_snapshot.step_duration_hours:.4f} hrs")
-col3.metric(
-    "🌀 Agitation Rate", 
-    f"{latest_snapshot.parameters['agitation_rpm']:.1f} RPM",
-    delta=f"{latest_snapshot.parameters['agitation_rpm'] - 120.0:.1f} vs Ref"
-)
-col4.metric(
-    "📊 Sensor Health Check", 
-    "ALARM ACTIVE" if (results["t2_alarm"] or results["spe_alarm"]) else "STABLE (GxP)",
-    delta="CRITICAL" if results["spe_alarm"] else "NORMAL",
-    delta_color="inverse" if (results["t2_alarm"] or results["spe_alarm"]) else "normal"
-)
+# Render the GxP-compliant status header banner based on multivariate checks
+BioTwinStatusSystem.render_process_status_header(results)
 
-# Build real-time Hotelling T-squared tracking graph
-fig_t2 = go.Figure()
-fig_t2.add_trace(go.Scatter(x=df_history.index, y=df_history["t2_value"], name="Hotelling T²", line=dict(color="#0066CC")))
-fig_t2.add_trace(go.Scatter(x=df_history.index, y=df_history["t2_ucl"], name="T² UCL Limit", line=dict(color="red", dash="dash")))
-fig_t2.update_layout(title="Hotelling T² Latent Space Variation Trends", template="plotly_dark", height=300, margin=dict(l=20, r=20, t=40, b=20))
+st.markdown("---")
 
-# Build real-time SPE Q-Residual tracking graph
-fig_spe = go.Figure()
-fig_spe.add_trace(go.Scatter(x=df_history.index, y=df_history["spe_value"], name="SPE (Q)", line=dict(color="#FF9900")))
-fig_spe.add_trace(go.Scatter(x=df_history.index, y=df_history["spe_ucl"], name="SPE UCL Limit", line=dict(color="red", dash="dash")))
-fig_spe.update_layout(title="Squared Prediction Error (SPE) Residual Trends", template="plotly_dark", height=300, margin=dict(l=20, r=20, t=40, b=20))
+# Render side-by-side batch context and age tracking
+meta_col1, meta_col2 = st.columns(2)
+meta_col1.metric("🧪 Active Batch Run ID", latest_snapshot.batch_id)
+meta_col2.metric("⏱ Age (Hours)", f"{latest_snapshot.step_duration_hours:.4f} hrs")
 
+# Render the physical parameter sensor grid
+BioTwinStatusSystem.render_parameter_metrics_grid(latest_snapshot.parameters)
+
+st.markdown("---")
+
+# Generate and render the specialized statistical trend charts side-by-side
 chart_col1, chart_col2 = st.columns(2)
-chart_col1.plotly_chart(fig_t2, use_container_width=True)
-chart_col2.plotly_chart(fig_spe, use_container_width=True)
+
+with chart_col1:
+    fig_t2 = BioTwinControlCharts.build_statistical_trend_chart(
+        df_history=df_history,
+        value_column="t2_value",
+        ucl_column="t2_ucl",
+        title="Hotelling T² Latent Space Variation Trends",
+        line_color="#0066CC"
+    )
+    st.plotly_chart(fig_t2, use_container_width=True)
+
+with chart_col2:
+    fig_spe = BioTwinControlCharts.build_statistical_trend_chart(
+        df_history=df_history,
+        value_column="spe_value",
+        ucl_column="spe_ucl",
+        title="Squared Prediction Error (SPE) Residual Trends",
+        line_color="#FF9900"
+    )
+    st.plotly_chart(fig_spe, use_container_width=True)
 
 # -----------------------------------------------------------------------------
 # 6. AGENTIC AI DECISION-SUPPORT LAYER
 # -----------------------------------------------------------------------------
-st.divider()
-st.subheader("🤖 Groq Autonomous LLM Diagnostic Hub")
-
 if results["t2_alarm"] or results["spe_alarm"]:
-    st.error("⚠️ Multi-variable control parameters have breached safe GxP operation boundaries.")
+    st.markdown("### 🤖 Groq Autonomous LLM Diagnostic Hub")
     
     if groq_agent is not None:
         with st.spinner("Submitting telemetry packet to Groq low-latency inference cluster..."):
             diagnostic_report = groq_agent.analyze_process_anomaly(latest_snapshot, results)
-            st.markdown("### Actionable SOP Diagnostic Summary:")
             st.info(diagnostic_report)
     else:
         st.warning(
             "Groq Client infrastructure inactive. Add a valid `GROQ_API_KEY` to your environment or "
             "`.streamlit/secrets.toml` config layer to receive automated root-cause reports."
         )
-else:
-    st.success("🟢 Continuous monitoring profile reveals all variables remain locked within Golden Batch limits.")
 
 # Force Streamlit to instantly re-execute and query the loop generator for immediate UI refreshes
 st.rerun()
