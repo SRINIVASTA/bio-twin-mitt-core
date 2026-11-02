@@ -7,88 +7,97 @@ import streamlit as st
 
 class EnterpriseNotificationService:
     """
-    Enterprise-grade notification middleware handling multi-channel alert delivery 
-    with configuration injection from secure environment storage.
+    Production-grade hybrid notification service handling both periodic summaries 
+    and immediate high-priority predictive emergency overrides.
     """
     
+    @st.cache_data(ttl=60)
+    def build_summary_table(latest_parameters: dict) -> str:
+        rows = "".join([
+            f"<tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>{k}</b></td>"
+            f"<td style='padding: 8px; border-bottom: 1px solid #ddd; text-align: right;'>{v:.3f}</td></tr>"
+            for k, v in latest_parameters.items()
+        ])
+        return f"<table style='width: 100%; border-collapse: collapse;'>{rows}</table>"
+
     @staticmethod
-    def dispatch_gmail_alert(report_markdown: str, alarm_type: str, time_to_breach_min: float = None) -> bool:
+    def dispatch_hybrid_alert(report_markdown: str, alarm_type: str, latest_parameters: dict, is_emergency: bool = False, time_to_breach: float = None) -> bool:
         """
-        Directly routes structured reports to designated stakeholders using 
-        a validated Google SMTP App Relay. Isolates HTML styling from the UI layer.
+        Routes either routine digests or immediate trajectory breach warnings to stakeholders.
         """
         try:
-            # Safely fetch credentials from Streamlit's native encrypted secrets vault
             if "gmail" not in st.secrets:
-                st.warning("⚠️ Notification layer bypassed: [gmail] config block missing from secrets.toml.")
                 return False
                 
             gmail_secrets = st.secrets["gmail"]
             sender = gmail_secrets["SENDER_EMAIL"]
             password = gmail_secrets["APP_PASSWORD"]
             recipients = gmail_secrets["RECIPIENTS"]
-            
-            smtp_server = "://gmail.com"
-            smtp_port = 587
 
-            # Assemble cross-platform multipart container
             msg = MIMEMultipart()
             msg['From'] = sender
             msg['To'] = ", ".join(recipients)
             
-            # Assign a contextual subject line based on real-time or predictive state
-            if time_to_breach_min is not None:
-                msg['Subject'] = f"🔮 PREDICTIVE ALERT: Red Line Anomaly Expected within {time_to_breach_min:.1f} Mins!"
+            # 1. Structural assignment depending on whether an override or periodic ticket triggered
+            if is_emergency:
+                time_context = f"within {time_to_breach:.1f} mins" if time_to_breach else "Imminent"
+                msg['Subject'] = f"🚨 GxP CRITICAL BOUNDARY RISK: {alarm_type} Anomaly Expected {time_context}!"
+                banner_color = "#f8d7da"
+                text_color = "#721c24"
+                border_color = "#dc2626"
+                header_title = "🔮 Predictive Early-Intervention Emergency Overrides"
+                sub_text = "CRITICAL ACTION REQUIRED: The forecasting engine has identified an immediate boundary collapse trajectory."
             else:
-                msg['Subject'] = f"🚨 GxP CRITICAL BREACH: {alarm_type} Anomaly Actively Tripped"
+                msg['Subject'] = f"📊 1-Min Bioprocess Performance Digest: {alarm_type}"
+                banner_color = "#f0fdf4" if "STABLE" in alarm_type else "#fff5f5"
+                text_color = "#166534" if "STABLE" in alarm_type else "#991b1b"
+                border_color = "#16a34a" if "STABLE" in alarm_type else "#dc2626"
+                header_title = "📋 Routine 60-Second Process Performance Summary"
+                sub_text = "Continuous automated telemetry analytics insight transmission packet."
 
-            # Encapsulated enterprise HTML template layout
+            param_table = EnterpriseNotificationService.build_summary_table(latest_parameters)
+            
             body = f"""
             <html>
-              <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px;">
-                <div style="background-color: { '#fff3cd' if time_to_breach_min else '#f8d7da' }; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-                    <h2 style="color: { '#856404' if time_to_breach_min else '#721c24' }; margin: 0; font-size: 20px;">
-                        { '🔮 Predictive Early-Intervention Alert' if time_to_breach_min else '⚠️ GxP Critical Boundary Breach' }
-                    </h2>
-                    <p style="margin: 5px 0 0 0; font-size: 14px;">The Bio-Twin monitoring layer intercepted an operational deviation risk profile.</p>
+              <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.5; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <div style="background-color: {banner_color}; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid {border_color};">
+                    <h2 style="color: {text_color}; margin: 0; font-size: 18px;">{header_title}</h2>
+                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #475569;">{sub_text}</p>
                 </div>
-                
-                <p><strong>Alarm Condition Profile:</strong> {alarm_type}</p>
             """
-            
-            if time_to_breach_min is not None:
+
+            if is_emergency and time_to_breach is not None:
                 body += f"""
-                <p style="font-size: 15px;"><strong>Estimated Time Before Red Alert Safety Line Intersection:</strong> 
+                <p style="font-size: 15px;"><strong>Estimated Window Remaining Before Boundary Cross:</strong> 
                    <span style="color: #d9534f; font-weight: bold; background-color: #ffeef0; padding: 4px 8px; border-radius: 4px;">
-                     {time_to_breach_min:.2f} Minutes
+                     {time_to_breach:.2f} Minutes
                    </span>
                 </p>
                 """
-                
+
             body += f"""
-                <hr style="border: 0; border-top: 1px solid #eee;" />
-                <h3 style="color: #292b2c; margin-bottom: 10px;">Agentic AI Generated Preventive SOP Actions:</h3>
-                <div style="background-color: #f7f7f9; border-left: 4px solid #f0ad4e; padding: 15px; margin: 15px 0; font-family: monospace; white-space: pre-wrap; font-size: 13px; line-height: 1.4; border-radius: 4px;">
+                <h3 style="color: #1e293b; margin-top: 15px;">📋 Snapshot Parameters Metrics:</h3>
+                {param_table}
+                
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+                <h3 style="color: #1e293b;">🤖 Digital Twin AI Diagnostics & SOP Actions:</h3>
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; font-family: monospace; white-space: pre-wrap; font-size: 13px; border-radius: 4px; color: #334155;">
 {report_markdown}
                 </div>
-                <hr style="border: 0; border-top: 1px solid #eee;" />
-                <p style="font-size: 11px; color: #777; text-align: center; margin-top: 20px;">
-                    <em>This notification was systematically generated by bio-twin-mitt-core telemetry listeners.</em>
+                <p style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 25px;">
+                    <em>This message was systematically compiled by bio-twin-mitt-core hybrid alert infrastructure.</em>
                 </p>
               </body>
             </html>
             """
             msg.attach(MIMEText(body, 'html'))
 
-            # Execute explicit secure handshake sequence
-            with smtplib.SMTP(smtp_server, smtp_port) as server:
+            with smtplib.SMTP("://gmail.com", 587) as server:
                 server.starttls() 
                 server.login(sender, password)
                 server.send_message(msg)
-
             return True
 
         except Exception as e:
-            # Fail silently to console logs to prevent disrupting the core application streaming UI loop
-            print(f"[❌ EnterpriseNotificationService Error]: {str(e)}")
+            print(f"[❌ EnterpriseNotificationService Hybrid Error]: {str(e)}")
             return False
