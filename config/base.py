@@ -56,11 +56,14 @@ GOLDEN_BATCH_SIGMAS: Dict[str, float] = {
 # =============================================================================
 # 📈 SOFT SENSOR & AGENT INFERENCE TUNING METRICS
 # =============================================================================
+# config/base.py - Add under STATISTICAL_CONTROL_LIMITS
+
 STATISTICAL_CONTROL_LIMITS: Dict[str, Any] = {
     "alpha_significance": 0.05,       
     "pca_n_components": 2,            
     "buffer_memory_limit": 40,        
-    "sampling_interval_seconds": 0.2  
+    "sampling_interval_seconds": 0.2,  # Evaluation ticks (5 per second)
+    "report_interval_seconds": 60.0    # Continuous digest heartbeat (1 minute)
 }
 
 # Active open production model string replacement to clear decommission error
