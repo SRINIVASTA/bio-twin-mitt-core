@@ -2,10 +2,9 @@
 import sys
 import os
 
-# 👇 FORCE ABSOLUTE PATH REGISTRATION FOR REPOSITORY ROOT
+# Force absolute system path registration for the enterprise directory structure
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# --- Now keep your existing imports exactly as they were ---
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -21,7 +20,7 @@ from config.base import STATISTICAL_CONTROL_LIMITS, GOLDEN_BATCH_TARGETS, GOLDEN
 # Import the decoupled enterprise notifier layer
 from src.mitt_core.infrastructure.notifier import EnterpriseNotificationService
 
-
+# Streamlit application layout definitions
 st.set_page_config(page_title="Pfizer MITT Bio Twin Console", page_icon="🧬", layout="wide")
 st.title("🧬 Bio-Twin Operational Execution Console")
 st.caption("Manufacturing Intelligence & Technology Transformation Framework Layer")
@@ -51,6 +50,7 @@ def setup_runtime_detector_and_agent():
 pca_detector, groq_agent = setup_runtime_detector_and_agent()
 log_path = "data/processed/batch_state_audit_trail.csv"
 
+# Sidebar interface interaction management
 with st.sidebar:
     st.header("🔄 Simulation Engine Control")
     simulation_active = st.toggle(
@@ -63,12 +63,18 @@ with st.sidebar:
     st.header("🎛 Process Control Interface")
     if st.button("🚨 Inject Mechanical Agitation Anomaly", use_container_width="stretch"):
         st.session_state.fault_injected = True
+        # Instantly clear generator cache state to force fault propagation down the pipeline
+        if "telemetry_stream" in st.session_state:
+            del st.session_state["telemetry_stream"]
+            
     if st.button("🟢 Reset to Normal Golden Envelope Conditions", use_container_width="stretch"):
         st.session_state.fault_injected = False
         st.session_state.metrics_history = []
         st.session_state.cached_diagnostic_report = ""
         st.session_state.last_llm_call_time = 0.0
         st.session_state.last_emailed_report_time = 0.0
+        if "telemetry_stream" in st.session_state:
+            del st.session_state["telemetry_stream"]
         
     st.markdown("---")
     st.header("🤖 AI Agent Settings")
@@ -95,9 +101,24 @@ with st.sidebar:
             st.caption("Preparing data stream download channels...")
 # app.py [PART 2/2] - Live Telemetry Core Loops & Visualization Engines
 
-simulator = PIHistorianSimulator()
-stream = simulator.stream_live_telemetry(inject_fault=st.session_state.fault_injected)
-latest_snapshot = next(stream)
+# ⚙️ PERSISTENT STREAM LAYER: Encapsulate the generator pipeline so it doesn't drop index flags on st.rerun
+if "pi_simulator" not in st.session_state:
+    st.session_state.pi_simulator = PIHistorianSimulator()
+
+if "telemetry_stream" not in st.session_state:
+    st.session_state.telemetry_stream = st.session_state.pi_simulator.stream_live_telemetry(
+        inject_fault=st.session_state.fault_injected
+    )
+
+# Pull the next sequential real-time data tick forward from the saved execution buffer trace
+try:
+    latest_snapshot = next(st.session_state.telemetry_stream)
+except (StopIteration, KeyError):
+    # Safe fallback wrapper to refresh the logging trail pipeline cleanly if data buffers exhaust
+    st.session_state.telemetry_stream = st.session_state.pi_simulator.stream_live_telemetry(
+        inject_fault=st.session_state.fault_injected
+    )
+    latest_snapshot = next(st.session_state.telemetry_stream)
 
 # Build features matrix matching config order
 input_vector = np.array([[latest_snapshot.parameters[k] for k in GOLDEN_BATCH_TARGETS.keys()]])
@@ -156,7 +177,6 @@ if len(df_history) >= 15:
                 break
 
 active_red_alert = results["t2_alarm"] or results["spe_alarm"]
-is_system_emergency = active_red_alert or predictive_5min_alert
 
 # -----------------------------------------------------------------------------
 # 4. DASHBOARD RENDERING: HEADER & PARAMETERS GRID
@@ -183,8 +203,6 @@ with c2:
 # -----------------------------------------------------------------------------
 # 6. HYBRID ACTION LAYER: 1-MIN SUMMARY DIGEST & 5-MIN EMERGENCY OVERRIDE
 # -----------------------------------------------------------------------------
-st.markdown("### 🤖 Groq Autonomous LLM Diagnostic Hub")
-
 current_time = time.time()
 report_interval = STATISTICAL_CONTROL_LIMITS.get("report_interval_seconds", 60.0)
 
@@ -194,18 +212,17 @@ time_since_last_llm = current_time - st.session_state.last_llm_call_time
 
 # Setup explicit conditional triggers
 is_digest_window_reached = (time_since_last_digest >= report_interval)
-is_emergency_active = (results["t2_alarm"] or results["spe_alarm"] or predictive_5min_alert)
+is_emergency_active = (active_red_alert or predictive_5min_alert)
 
-# Base flag variables to assign execution behavior
 trigger_email = False
 email_mode_emergency = False
 
-# 🛑 CONDITION A: Immediate 5-Minute Predictive Anomaly Override (Overrides 1-min timer)
+# CONDITION A: Immediate 5-Minute Predictive Anomaly Override (Bypasses 1-min timer)
 if is_emergency_active:
     alarm_type_label = []
     if results["t2_alarm"]: alarm_type_label.append("Hotelling T² Active")
     if results["spe_alarm"]: alarm_type_label.append("SPE Active")
-    if predictive_5min_alert and not (results["t2_alarm"] or results["spe_alarm"]): 
+    if predictive_5min_alert and not active_red_alert: 
         alarm_type_label.append(f"{target_metric_label} Projected 5-Min Violation")
     active_label_string = " & ".join(alarm_type_label)
     
@@ -214,18 +231,18 @@ if is_emergency_active:
         trigger_email = True
         email_mode_emergency = True
 
-# 🟢 CONDITION B: Routine 1-Minute Continuous Update Digest (Fires when system is steady)
+# CONDITION B: Routine 1-Minute Continuous Update Digest (Fires when system is steady)
 elif is_digest_window_reached or not st.session_state.cached_diagnostic_report:
     active_label_string = "🟢 STABLE GOLDEN BATCH"
     trigger_email = True
     email_mode_emergency = False
 
-# Execute centralized AI execution and email distribution
+# Execute centralized AI calculation and email distribution
 if enable_llm_diagnostics and simulation_active and trigger_email:
     if groq_agent is not None:
         with st.spinner("Processing Hybrid Subsystem AI Diagnostics..."):
             
-            # Pass estimated lookup minute variables down to custom prompt library overrides
+            # Pass parameters down to your custom prompt library overrides
             new_report = groq_agent.analyze_process_anomaly(
                 snapshot=latest_snapshot, 
                 statistical_metrics=results,
@@ -251,12 +268,7 @@ if enable_llm_diagnostics and simulation_active and trigger_email:
                     else:
                         st.toast("📊 Routine 1-Minute Performance Digest Email Dispatched.")
                 
-                # Track update windows dynamically
-                if email_mode_emergency:
-                    # Sync-lock timers so an active emergency counts as the latest digest update
-                    st.session_state.last_emailed_report_time = current_time
-                else:
-                    st.session_state.last_emailed_report_time = current_time
+                st.session_state.last_emailed_report_time = current_time
             else:
                 st.error(new_report)
     else:
@@ -270,3 +282,27 @@ if st.session_state.cached_diagnostic_report:
         st.caption(f"⚙️ **Hybrid Monitor Engaged.** Standard 1-Min Digest refresh in: **{countdown:.1f}s**. *5-Min Predictive Interrupt Active 24/7.*")
     else:
         st.caption("⏸️ Simulation paused. Diagnostic reporting states frozen.")
+
+# -----------------------------------------------------------------------------
+# 7. HISTORICAL BATCH AUDIT FILE VIEWER LAYER
+# -----------------------------------------------------------------------------
+st.markdown("---")
+st.subheader("📋 Historical Batch Audit File Viewer (`data/processed/`)")
+
+if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
+    try:
+        df_audit = pd.read_csv(log_path)
+        st.dataframe(df_audit.tail(15), use_container_width="stretch")
+    except Exception:
+        st.caption("Refreshing data log file registers...")
+    else:
+        st.caption("Awaiting initial file generation sequences. System loop logging is running silently.")
+
+# -----------------------------------------------------------------------------
+# 8. RERUN LOOP OR FREEZE CONTROL
+# -----------------------------------------------------------------------------
+if simulation_active:
+    time.sleep(STATISTICAL_CONTROL_LIMITS["sampling_interval_seconds"])
+    st.rerun()
+else:
+    st.info("⏸️ Bioprocess stream engine is currently frozen. Turn on the switch in the sidebar to resume.")
