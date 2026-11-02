@@ -70,6 +70,7 @@ with st.sidebar:
         except Exception:
             st.caption("Preparing data stream download channels...")
 # app.py [PART 2/2] - Live Telemetry Core Loops & Visualization Engines
+
 simulator = PIHistorianSimulator()
 stream = simulator.stream_live_telemetry(inject_fault=st.session_state.fault_injected)
 latest_snapshot = next(stream)
@@ -80,14 +81,145 @@ results = pca_detector.transform_and_evaluate(input_vector)
 if simulation_active:
     st.session_state.metrics_history.append({
         "timestamp": latest_snapshot.timestamp, 
-        "t2_value": results["t2_value"], "t2_ucl": results["t2_ucl"],
-        "spe_value": results["spe_value"], "spe_ucl": results["spe_ucl"]
+        "t2_value": results["t2_value"], 
+        "t2_ucl": results["t2_ucl"],
+        "spe_value": results["spe_value"], 
+        "spe_ucl": results["spe_ucl"]
     })
+
     if len(st.session_state.metrics_history) > STATISTICAL_CONTROL_LIMITS["buffer_memory_limit"]:
         st.session_state.metrics_history.pop(0)
+
     BioTwinStatusSystem.log_process_state_to_file(latest_snapshot.parameters, results)
 
 df_history = pd.DataFrame(st.session_state.metrics_history)
 
-# Predictive evaluation and rendering logic follows standard telemetry tracking and Groq diagnostic updates.
-# Please refer to the source blocks above for the full operational loops, Plotly charts, and audit trail viewing components.
+# -----------------------------------------------------------------------------
+# 🔮 PREDICTIVE FORECASTING ENGINE (5-MINUTE RED ALERT LOOKAHEAD)
+# -----------------------------------------------------------------------------
+predictive_5min_alert = False
+estimated_minutes_to_breach = None
+target_metric_label = ""
+
+# Establish tracking velocity using a historical linear slope window
+if len(df_history) >= 5:
+    sampling_interval = STATISTICAL_CONTROL_LIMITS.get("sampling_interval_seconds", 1.0)
+    
+    for val_col, ucl_col, name_str in [("t2_value", "t2_ucl", "Hotelling T²"), ("spe_value", "spe_ucl", "SPE Residual")]:
+        y = df_history[val_col].values[-5:]
+        x = np.arange(len(y)) * sampling_interval
+        
+        # Calculate ordinary least squares slope trajectory
+        slope, _ = np.polyfit(x, y, 1)
+        current_val = y[-1]
+        ucl_limit = df_history[ucl_col].values[-1]
+        
+        # If tracking metrics are scaling upward toward the threshold line
+        if slope > 0 and current_val < ucl_limit:
+            remaining_gap = ucl_limit - current_val
+            seconds_to_red_alert = remaining_gap / slope
+            minutes_to_red_alert = seconds_to_red_alert / 60.0
+            
+            # Catch if the projected crash timeline sits within the 5-minute envelope
+            if 0.0 < minutes_to_red_alert <= 5.0:
+                predictive_5min_alert = True
+                estimated_minutes_to_breach = minutes_to_red_alert
+                target_metric_label = name_str
+                break
+
+# Combine active real-time breach triggers with our predictive early warning trigger
+active_red_alert = results["t2_alarm"] or results["spe_alarm"]
+is_system_emergency = active_red_alert or predictive_5min_alert
+
+# -----------------------------------------------------------------------------
+# 4. DASHBOARD RENDERING: HEADER & PARAMETERS GRID
+# -----------------------------------------------------------------------------
+if predictive_5min_alert and not active_red_alert:
+    st.warning(f"🔮 **PREDICTIVE EMERGENCY INCOMING:** {target_metric_label} trajectory projects a Red Alert violation within **{estimated_minutes_to_breach:.1f} minutes**! Dispatching automated preventive SOP actions via decoupled notification microservice.")
+else:
+    BioTwinStatusSystem.render_process_status_header(results)
+
+BioTwinStatusSystem.render_parameter_metrics_grid(latest_snapshot.parameters)
+
+# -----------------------------------------------------------------------------
+# 5. CONTROL LIMIT VISUALIZATIONS (PLOTLY CHARTS)
+# -----------------------------------------------------------------------------
+st.markdown("---")
+c1, c2 = st.columns(2)
+with c1:
+    fig_t2 = BioTwinControlCharts.build_statistical_trend_chart(df_history, "t2_value", "t2_ucl", "Hotelling T² Latent Variability Metrics", "#0066CC")
+    st.plotly_chart(fig_t2, use_container_width="stretch", key="chart_hotelling_t2")
+with c2:
+    fig_spe = BioTwinControlCharts.build_statistical_trend_chart(df_history, "spe_value", "spe_ucl", "Squared Prediction Error (SPE) Multi-Residual Trends", "#FF9900")
+    st.plotly_chart(fig_spe, use_container_width="stretch", key="chart_residual_spe")
+
+# -----------------------------------------------------------------------------
+# 6. AGENTIC AI DECISION-SUPPORT LAYER WITH DECOUPLED INFRASTRUCTURE EMAIL LINK
+# -----------------------------------------------------------------------------
+if is_system_emergency:
+    st.markdown("### 🤖 Groq Autonomous LLM Diagnostic Hub")
+    
+    alarm_type_label = []
+    if results["t2_alarm"]: alarm_type_label.append("Hotelling T² Active")
+    if results["spe_alarm"]: alarm_type_label.append("SPE Active")
+    if predictive_5min_alert and not active_red_alert: alarm_type_label.append(f"{target_metric_label} Predicted 5-Min Anomaly")
+    active_alarm_string = " & ".join(alarm_type_label)
+
+    if enable_llm_diagnostics:
+        current_time = time.time()
+        time_elapsed_since_last_call = current_time - st.session_state.last_llm_call_time
+        
+        if simulation_active and (time_elapsed_since_last_call > 30.0 or not st.session_state.cached_diagnostic_report):
+            if groq_agent is not None:
+                with st.spinner("Invoking low-latency predictive diagnostic calculation steps..."):
+                    new_report = groq_agent.analyze_process_anomaly(latest_snapshot, results)
+                    
+                    if "Failed to execute" not in new_report and "Rate limit reached" not in new_report:
+                        st.session_state.cached_diagnostic_report = new_report
+                        st.session_state.last_llm_call_time = current_time
+                        
+                        # Decoupled notification service call triggers here
+                        if st.session_state.last_emailed_report_time != current_time:
+                            success = EnterpriseNotificationService.dispatch_gmail_alert(
+                                report_markdown=new_report, 
+                                alarm_type=active_alarm_string, 
+                                time_to_breach_min=estimated_minutes_to_breach
+                            )
+                            if success:
+                                st.toast("📩 Automatic early-intervention alert dispatched via notification engine.")
+                            st.session_state.last_emailed_report_time = current_time
+                    else:
+                        st.error(new_report)
+            else:
+                st.warning("Groq Client framework offline. Configure GROQ_API_KEY environment variable token.")
+        
+        if st.session_state.cached_diagnostic_report:
+            st.info(st.session_state.cached_diagnostic_report)
+            if simulation_active:
+                st.caption(f"⏱️ Diagnostic report locked. Next token window refresh available in: {max(0.0, 30.0 - time_elapsed_since_last_call):.1f}s")
+            else:
+                st.caption("⏸️ Simulation paused. Diagnostic state frozen.")
+
+# -----------------------------------------------------------------------------
+# 7. HISTORICAL BATCH AUDIT FILE VIEWER LAYER
+# -----------------------------------------------------------------------------
+st.markdown("---")
+st.subheader("📋 Historical Batch Audit File Viewer (`data/processed/`)")
+
+if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
+    try:
+        df_audit = pd.read_csv(log_path)
+        st.dataframe(df_audit.tail(15), use_container_width="stretch")
+    except Exception:
+        st.caption("Refreshing data log file registers...")
+else:
+    st.caption("Awaiting initial file generation sequences. System loop logging is running silently.")
+
+# -----------------------------------------------------------------------------
+# 8. RERUN LOOP OR FREEZE CONTROL
+# -----------------------------------------------------------------------------
+if simulation_active:
+    time.sleep(STATISTICAL_CONTROL_LIMITS["sampling_interval_seconds"])
+    st.rerun()
+else:
+    st.info("⏸️ Bioprocess stream engine is currently frozen. Turn on the switch in the sidebar to resume.")
