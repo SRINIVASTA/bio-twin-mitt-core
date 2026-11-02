@@ -63,5 +63,5 @@ STATISTICAL_CONTROL_LIMITS: Dict[str, Any] = {
     "sampling_interval_seconds": 0.2  
 }
 
-# Standard Tier-Accessible Production Model Identifier to fix the 404 access error
-GROQ_MODEL_TARGET: str = "llama3-70b-8192"
+# Active open production model string replacement to clear decommission error
+GROQ_MODEL_TARGET: str = "qwen/qwen3.8-27b"
