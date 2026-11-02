@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Dict, Any
+from scipy.stats import f, chi2
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from scipy.stats import f, chi2
 
 
 class PCABioprocessDetector:
@@ -14,7 +14,7 @@ class PCABioprocessDetector:
         self.pca = PCA(n_components=n_components)
         self.t2_ucl = 0.0
         self.spe_ucl = 0.0
-        self.training_scores_var = None  # Freezes baseline variance matrix shapes
+        self.training_scores_var = None
         self._is_trained = False
 
     def fit(self, X: np.ndarray) -> "PCABioprocessDetector":
@@ -25,19 +25,16 @@ class PCABioprocessDetector:
         X_reconstructed = self.pca.inverse_transform(X_scores)
         residuals = X_scaled - X_reconstructed
         
-        # Safe variance computation for training data
         if X_scores.shape[0] > 1:
             self.training_scores_var = np.var(X_scores, axis=0, ddof=1)
         else:
             self.training_scores_var = np.ones(self.n_components)
 
-        # Ensure no division by zero on static channels
         self.training_scores_var[self.training_scores_var == 0] = 1e-6
         
         n_samples = X.shape[0]
         p = self.n_components
         
-        # Prevent division errors if sample sizes are abnormally small during initialization
         denom = n_samples - p
         if denom <= 0:
             denom = 1
@@ -45,7 +42,6 @@ class PCABioprocessDetector:
         f_stat = f.ppf(1 - self.alpha, p, denom)
         self.t2_ucl = (p * (n_samples - 1) / denom) * f_stat
 
-        # Compute SPE (Q) Control Limit via Box's approximate Chi-Square method safely
         spe_values = np.sum(residuals ** 2, axis=1)
         spe_var = np.var(spe_values, ddof=1) if spe_values.shape[0] > 1 else 0.0
         spe_mean = np.mean(spe_values)
@@ -74,10 +70,9 @@ class PCABioprocessDetector:
 
         X_scaled = self.scaler.transform(X_sample)
         X_scores = self.pca.transform(X_scaled)
-        X_reconstructed = self.pca.inverse_transform(X_scores)
+        X_reconstructed = self.pca.inverse_transform(X_scaled)
         residual = X_scaled - X_reconstructed
 
-        # Use frozen historical variance parameters to completely eliminate dynamic runtime warnings
         t2_score = float(np.sum((X_scores ** 2) / self.training_scores_var))
         spe_score = float(np.sum(residual ** 2))
 
