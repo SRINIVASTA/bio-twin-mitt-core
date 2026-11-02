@@ -1,8 +1,9 @@
-# bio-twin-mitt-core
+# 🧬 Bio-Twin Operational Execution Console
+### Manufacturing Intelligence & Technology Transformation Framework Layer
 
 This repository serves as a self-contained core framework for implementing advanced manufacturing intelligence, latent variable soft sensors, and agentic decision-support workflows within a biopharmaceutical manufacturing context (Pharma 4.0). 
 
-The architecture is explicitly optimized to ingest streaming industrial internet of things (IIoT) telemetry from an in-memory historian simulator, monitor multi-variable statistical process control (MSPC) boundaries via Principal Component Analysis (PCA), and generate Standard Operating Procedure (SOP) compliant diagnostic rationales using a localized Groq LLM agent loop.
+The architecture is explicitly optimized to ingest streaming industrial internet of things (IIoT) telemetry from an in-memory historian simulator, monitor multi-variable statistical process control (MSPC) boundaries via a lightweight Principal Component Analysis (PCA) tracking matrix, and generate Standard Operating Procedure (SOP) compliant diagnostic rationales using a localized Groq LLM agent loop.
 
 ---
 
@@ -19,20 +20,21 @@ graph TD
 
     subgraph Analytical_Engine_Layer [Analytical Engine Layer]
         B -->|Validated Pydantic Payload| C[app.py<br>Central Gateway Routing]
-        C -->|Feature Vector Matrix| D[pca_detector.py<br>Latent Variable Soft Sensor]
+        C -->|Feature Vector Matrix| D[pca_detector.py<br>High-Speed Tracking Engine]
         D -->|Compute Scores| E{SPC Limit Checker<br>Hotelling T² & SPE}
     end
 
     subgraph User_Interface_Layer [User Interface Layer]
         E -->|Safe State| F[status.py<br>Render Validated State]
         F --> G[charts.py<br>Render Stable Control Limits]
+        C -->|Write Operation Tick| M[(Local CSV Audit Trail<br>Data Folder)]
     end
 
     subgraph Agentic_Decision_Support [Agentic AI Subsystem]
         E -->|Alarm Breach Tripped = True| H[engine.py<br>Groq Agent Runtime Engine]
-        I[kg_connector.py<br>Local Knowledge Graph] -->|Semantic Bounds & SOPs| H
+        I[type-safe key mappings<br>Graph Ontology Layer] -->|Semantic Bounds & SOPs| H
         J[prompts.py<br>GxP System Blueprint Guidelines] --> H
-        H -->|Deterministic Diagnostic API Call| K[Groq LLM Gateway Cluster]
+        H -->|Deterministic Diagnostic API Call| K[Groq LLM Gateway Cluster<br>qwen/qwen3.8-27b]
         K -->|Return Actionable SOP Markdown| L[st.info Dashboard Report View]
     end
 
@@ -52,8 +54,8 @@ graph TD
     Anomaly_Evaluation -->|T² Alarm = True <br> SPE Alarm = False| Shift[Process Drift / Kinetic Shift<br>Operating outside Golden Envelope]
     Anomaly_Evaluation -->|SPE Alarm = True| Outlier[Unmodeled Disturbance / Mechanical Fault<br>Structural or raw material variance]
     
-    Shift --> System_Prompt[Inject Graph Context & SOP Framework Constraints]
-    Outlier --> System_Prompt
+    Shift system_prompt --> System_Prompt[Inject Graph Context & SOP Framework Constraints]
+    Outlier system_prompt --> System_Prompt
     
     System_Prompt --> Groq_Inference[Invoke Zero-Temperature Deterministic Completion]
     Groq_Inference --> Markdown_Report[Publish High-Priority Actionable SOP Deviation Report]
@@ -67,11 +69,8 @@ graph TD
 bio-twin-mitt-core/
 │
 ├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.md
-│   │   └── feature_request.md
 │   └── workflows/
-│       └── lint-and-test.yml          # Automated PEP8 / Black / Flake8 verification
+│       └── lint-and-test.yml          # Automated PEP8 / Pytest CI verification
 │
 ├── .streamlit/
 │   ├── config.toml                    # Production UI styling, theme colors, & timeouts
@@ -82,7 +81,7 @@ bio-twin-mitt-core/
 │   └── base.py                        # Centralized application constants & parameter limits
 │
 ├── data/
-│   └── processed/                     # Local data directories for snapshot data cache
+│   └── processed/                     # Stores local running history audit sheets
 │
 ├── docker/
 │   └── Dockerfile.app                 # Multi-stage production Streamlit web container
@@ -97,7 +96,7 @@ bio-twin-mitt-core/
 │   │   │   ├── prompts.py             # System prompt blueprints and SOP constraints
 │   │   │   └── tools/
 │   │   │       ├── __init__.py
-│   │   │       └── kg_connector.py    # Local Knowledge Graph interface mapping
+│   │   │       └── kg_connector.py    # Local asset interface mapping logic
 │   │   │
 │   │   ├── domain/                    # --- Enterprise Business Logic ---
 │   │   │   ├── __init__.py
@@ -127,8 +126,7 @@ bio-twin-mitt-core/
 │
 ├── .env.example                       # Local environment credential blueprint
 ├── .gitignore
-├── app.py                             # Central Streamlit gateway routing file
-├── pyproject.toml                     # Poetry ecosystem / tool parameters
+├── app.py                             # Central Streamlit layout entrypoint
 └── requirements.txt                   # Pinned localized build packages
 ```
 
@@ -137,7 +135,7 @@ bio-twin-mitt-core/
 ## Core System Architecture Breakdown
 
 ### 🤖 Agentic AI Subsystem (`src/mitt_core/agents/`)
-* **`engine.py`:** Orchestrates the automated decision loop using the official `groq` SDK, executing low-latency inferences based on streaming process violations.
+* **`engine.py`:** Orchestrates the automated decision loop using the official `groq` SDK, executing low-latency inferences using a **30-second throttling guard** to eliminate 429 token limits.
 * **`prompts.py`:** Houses deterministic system prompt blueprints, critical alarm parsing matrices, and markdown response constraints to keep LLM outputs bounded and aligned with standard manufacturing workflows.
 * **`tools/kg_connector.py`:** Bridges the AI loop with the local asset ontology, converting structured parameter boundaries into clear, descriptive plain-text context strings for the model.
 
@@ -150,18 +148,18 @@ bio-twin-mitt-core/
 * **`local_csv_exporter.py`:** Standardizes mock environment setups by auto-generating a 500-row timeline CSV that maps directly to target bioprocess tag arrays.
 
 ### 📈 Soft Sensors & Machine Learning (`src/mitt_core/models/`)
-* **`pca_detector.py`:** Multivariable Principal Component Analysis engine that calculates real-time Hotelling’s T² and Squared Prediction Error (SPE) boundaries using historical training baseline envelopes.
+* **`pca_detector.py`:** Multivariable tracking engine that calculates real-time Hotelling’s T² and Squared Prediction Error (SPE) boundaries using frozen calculation variance parameters to eliminate dynamic runtime exceptions.
 * **`train.py`:** Ingests local processed reference spreadsheet documents, isolates feature columns, validates non-null row matrices, and serializes optimized parameters directly to static disk binary blocks (`.pkl`).
 
 ### 🎨 User Interface Layer (`src/ui/components/`)
-* **`status.py`:** Standardizes visual alert configurations, generating color-coded warning headers depending on specific statistical alarm types.
+* **`status.py`:** Standardizes visual alert configurations, generating color-coded warning headers depending on specific statistical alarm types and writing live data strings directly down into an offline `.csv` log.
 * **`charts.py`:** Constructs high-performance, interactive, and dark-themed Plotly charts showing score trajectories against calculated statistical Upper Control Limits (UCL).
 
 ---
 
 ## Getting Started: Local Deployment Lifecycle
 
-Follow these four terminal commands to provision data, train the models, and spin up the entire self-contained framework locally:
+Follow these terminal commands to provision data, train the models, and spin up the entire self-contained framework locally:
 
 ```bash
 # 1. Install localized mathematical, layout, and inference client packages
