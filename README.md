@@ -54,8 +54,8 @@ graph TD
     Anomaly_Evaluation -->|T² Alarm = True <br> SPE Alarm = False| Shift[Process Drift / Kinetic Shift<br>Operating outside Golden Envelope]
     Anomaly_Evaluation -->|SPE Alarm = True| Outlier[Unmodeled Disturbance / Mechanical Fault<br>Structural or raw material variance]
     
-    Shift system_prompt --> System_Prompt[Inject Graph Context & SOP Framework Constraints]
-    Outlier system_prompt --> System_Prompt
+    Shift -->|Process Shift Context| System_Prompt[Inject Graph Context & SOP Framework Constraints]
+    Outlier -->|Unmodeled Outlier Context| System_Prompt
     
     System_Prompt --> Groq_Inference[Invoke Zero-Temperature Deterministic Completion]
     Groq_Inference --> Markdown_Report[Publish High-Priority Actionable SOP Deviation Report]
