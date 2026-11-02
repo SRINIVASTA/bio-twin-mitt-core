@@ -135,7 +135,7 @@ bio-twin-mitt-core/
 ## Core System Architecture Breakdown
 
 ### 🤖 Agentic AI Subsystem (`src/mitt_core/agents/`)
-* **`engine.py`:** Orchestrates the automated decision loop using the official `groq` SDK, executing low-latency inferences using a **30-second throttling guard** to eliminate 429 token limits.
+* **`engine.py`:** Orchestrates the automated decision loop using the official `groq` SDK, executing low-latency inferences using a **30-second throttling guard** to completely eliminate token rate limits.
 * **`prompts.py`:** Houses deterministic system prompt blueprints, critical alarm parsing matrices, and markdown response constraints to keep LLM outputs bounded and aligned with standard manufacturing workflows.
 * **`tools/kg_connector.py`:** Bridges the AI loop with the local asset ontology, converting structured parameter boundaries into clear, descriptive plain-text context strings for the model.
 
@@ -159,7 +159,7 @@ bio-twin-mitt-core/
 
 ## Getting Started: Local Deployment Lifecycle
 
-Follow these terminal commands to provision data, train the models, and spin up the entire self-contained framework locally:
+Follow these four terminal commands to provision data, train the models, and spin up the entire self-contained framework locally:
 
 ```bash
 # 1. Install localized mathematical, layout, and inference client packages
