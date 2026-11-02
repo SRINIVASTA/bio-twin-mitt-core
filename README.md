@@ -8,8 +8,6 @@ The architecture is explicitly optimized to ingest streaming industrial internet
 ---
 <img src="bio-twin-mitt-core.png" width="100%">
 
-![My Image Description](bio-twin-mitt-core.png)
-
 ---
 
 ## Architecture Overview
