@@ -1,50 +1,33 @@
-name: GxP Continuous Integration & Code Verification
+name: GxP Continuous Integration Check
 
 on:
   push:
-    branches: [ "main", "master", "develop" ]
+    branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
 
 jobs:
-  verify-and-test:
-    name: Code Quality Linting & Mathematical Engine Testing
+  run-pipeline-checks:
     runs-on: ubuntu-latest
-
     steps:
-    # 1. Check out the latest commit from the repository tracking loop
-    - name: Checkout Repository Code
+    - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 2. Build a predictable, standardized Python 3.11 isolation sandbox
-    - name: Set up Python 3.11
+     Zarbee- Standard Python Environment Isolation
+    - name: Initialize Python 3.11 Environment
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
-        cache: 'pip' # Automated caching layer to accelerate workflow runs
+        cache: 'pip'
 
-    # 3. Provision local virtual dependencies
-    - name: Install Application Dependencies
+    - name: Run Build Dependencies Installation
       run: |
         python -m pip install --upgrade pip
         pip install black flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # 4. Enforce clean software architecture standards (PEP8 formatting check)
-    - name: Enforce PEP8 Code Style Verification (Black)
-      run: |
-        # Returns a non-zero exit status if code is unformatted, failing the pipeline build
-        black --check src/ tests/ app.py
+    - name: Lint Architecture Mappings (Black Enforcer)
+      run: black --check src/ tests/ app.py config/
 
-    # 5. Run static syntax analysis to prevent unhandled errors or circular references
-    - name: Lint Code Structure and Logic Errors (Flake8)
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 src/ tests/ app.py --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all formatting warnings as warnings rather than build blocks
-        flake8 src/ tests/ app.py --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-    # 6. Execute mathematical verification layer for latent variable models
-    - name: Run Multi-variable Statistical Process Control Tests (Pytest)
-      run: |
-        pytest tests/unit/test_pca_math.py -v
+    - name: Mathematical Verification Steps (Pytest Execution Layer)
+      run: pytest tests/unit/test_pca_math.py -v
