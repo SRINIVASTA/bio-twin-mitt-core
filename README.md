@@ -175,5 +175,4 @@ python src/mitt_core/infrastructure/local_csv_exporter.py
 python src/mitt_core/models/train.py
 
 # 4. Initialize the real-time operational execution console dashboard
-streamlit run app.py
-```
+👉 http://localhost:8506```
