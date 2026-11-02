@@ -14,6 +14,7 @@ st.set_page_config(page_title="Pfizer MITT Bio Twin Console", page_icon="🧬", 
 st.title("🧬 Bio-Twin Operational Execution Console")
 st.caption("Manufacturing Intelligence & Technology Transformation Framework Layer")
 
+# Initialize session parameters to maintain tracking registers across loop cycles
 if "metrics_history" not in st.session_state:
     st.session_state.metrics_history = []
 if "fault_injected" not in st.session_state:
@@ -21,14 +22,8 @@ if "fault_injected" not in st.session_state:
 
 @st.cache_resource
 def setup_runtime_detector_and_agent():
-    np.random.seed(42)
-    reference_data = np.random.normal(
-        loc=list(GOLDEN_BATCH_TARGETS.values()),
-        scale=list(GOLDEN_BATCH_SIGMAS.values()),
-        size=(150, 5)
-    )
+    """Initializes self-contained inference adapters with zero runtime memory lag."""
     detector = PCABioprocessDetector(n_components=STATISTICAL_CONTROL_LIMITS["pca_n_components"])
-    detector.fit(reference_data)
     try:
         agent = GroqBioprocessAgentEngine()
     except Exception:
@@ -45,22 +40,32 @@ with st.sidebar:
         st.session_state.fault_injected = False
         st.session_state.metrics_history = []
 
+# Core execution pipeline: Acquire simulated data snapshots
 simulator = PIHistorianSimulator()
 stream = simulator.stream_live_telemetry(inject_fault=st.session_state.fault_injected)
 latest_snapshot = next(stream)
 
+# Build features matrix matching config order
 input_vector = np.array([[latest_snapshot.parameters[k] for k in GOLDEN_BATCH_TARGETS.keys()]])
+
+# Execute high-speed statistical control evaluation checks
 results = pca_detector.transform_and_evaluate(input_vector)
 
+# Track values over time for dashboard visualization charts
 st.session_state.metrics_history.append({
-    "timestamp": latest_snapshot.timestamp, "t2_value": results["t2_value"], "t2_ucl": results["t2_ucl"],
-    "spe_value": results["spe_value"], "spe_ucl": results["spe_ucl"]
+    "timestamp": latest_snapshot.timestamp, 
+    "t2_value": results["t2_value"], 
+    "t2_ucl": results["t2_ucl"],
+    "spe_value": results["spe_value"], 
+    "spe_ucl": results["spe_ucl"]
 })
+
 if len(st.session_state.metrics_history) > STATISTICAL_CONTROL_LIMITS["buffer_memory_limit"]:
     st.session_state.metrics_history.pop(0)
 
 df_history = pd.DataFrame(st.session_state.metrics_history)
 
+# Render process status layout components 
 BioTwinStatusSystem.render_process_status_header(results)
 BioTwinStatusSystem.render_parameter_metrics_grid(latest_snapshot.parameters)
 
@@ -73,6 +78,7 @@ with c2:
     fig_spe = BioTwinControlCharts.build_statistical_trend_chart(df_history, "spe_value", "spe_ucl", "Squared Prediction Error (SPE) Multi-Residual Trends", "#FF9900")
     st.plotly_chart(fig_spe, use_container_width="stretch")
 
+# Execute Agentic AI Root Cause Analysis report layer if limits are breached
 if results["t2_alarm"] or results["spe_alarm"]:
     st.markdown("### 🤖 Groq Autonomous LLM Diagnostic Hub")
     if groq_agent is not None:
@@ -81,5 +87,6 @@ if results["t2_alarm"] or results["spe_alarm"]:
     else:
         st.warning("Groq Client framework offline. Configure GROQ_API_KEY environment variable token to populate this data feed.")
 
+# Pause based on config values, then rerun frontend view automatically
 time.sleep(STATISTICAL_CONTROL_LIMITS["sampling_interval_seconds"])
 st.rerun()
