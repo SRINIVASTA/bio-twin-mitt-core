@@ -6,6 +6,9 @@ This repository serves as a self-contained core framework for implementing advan
 The architecture is explicitly optimized to ingest streaming industrial internet of things (IIoT) telemetry from an in-memory historian simulator, monitor multi-variable statistical process control (MSPC) boundaries via a lightweight Principal Component Analysis (PCA) tracking matrix, and generate Standard Operating Procedure (SOP) compliant diagnostic rationales using a localized Groq LLM agent loop.
 
 ---
+![My Image Description](bio-twin-mitt-core.png)
+
+---
 
 ## Architecture Overview
 
