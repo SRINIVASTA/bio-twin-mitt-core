@@ -23,6 +23,10 @@ if "metrics_history" not in st.session_state:
     st.session_state.metrics_history = []
 if "fault_injected" not in st.session_state:
     st.session_state.fault_injected = False
+if "last_llm_call_time" not in st.session_state:
+    st.session_state.last_llm_call_time = 0.0
+if "cached_diagnostic_report" not in st.session_state:
+    st.session_state.cached_diagnostic_report = ""
 
 @st.cache_resource
 def setup_runtime_detector_and_agent():
@@ -36,6 +40,9 @@ def setup_runtime_detector_and_agent():
 
 pca_detector, groq_agent = setup_runtime_detector_and_agent()
 
+# Define structural path strings for files
+log_path = "data/processed/batch_state_audit_trail.csv"
+
 # -----------------------------------------------------------------------------
 # 2. INTERFACE CONTROL SIDEBAR & TOGGLES
 # -----------------------------------------------------------------------------
@@ -46,6 +53,8 @@ with st.sidebar:
     if st.button("🟢 Reset to Normal Golden Envelope Conditions", use_container_width="stretch"):
         st.session_state.fault_injected = False
         st.session_state.metrics_history = []
+        st.session_state.cached_diagnostic_report = ""
+        st.session_state.last_llm_call_time = 0.0
         
     st.markdown("---")
     st.header("🤖 AI Agent Settings")
@@ -57,8 +66,6 @@ with st.sidebar:
 
     st.markdown("---")
     st.header("📥 Data Export Options")
-    log_path = "data/processed/batch_state_audit_trail.csv"
-    
     # Render native browser file download pathway if the log matrix is populated on disk
     if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
         try:
@@ -75,6 +82,30 @@ with st.sidebar:
             st.caption("Preparing data stream download channels...")
     else:
         st.caption("Awaiting process telemetry to generate download file structure.")
+
+    st.markdown("---")
+    st.header("🧹 Cache & Log Management")
+    # Added clear cache utility button to wipe file systems instantly from the UI layer
+    if st.button("🗑️ Clear Local Audit Log & Cache", use_container_width="stretch"):
+        # 1. Flush memory caches out of browser session variables
+        st.session_state.metrics_history = []
+        st.session_state.cached_diagnostic_report = ""
+        st.session_state.last_llm_call_time = 0.0
+        st.session_state.fault_injected = False
+        
+        # 2. Wipe the physical file storage asset off the server disk layout
+        if os.path.exists(log_path):
+            try:
+                os.remove(log_path)
+                st.success("Successfully deleted local historical audit file.")
+            except Exception as e:
+                st.error(f"File erase locked: {str(e)}")
+        
+        # 3. Invoke internal Streamlit cache resource clearing routines
+        st.cache_resource.clear()
+        st.toast("Wiped application context caches clean!")
+        time.sleep(1.0)
+        st.rerun()
 
 # -----------------------------------------------------------------------------
 # 3. TELEMETRY STREAM ACQUISITION & STATISTICAL ANALYSIS
@@ -109,7 +140,7 @@ df_history = pd.DataFrame(st.session_state.metrics_history)
 BioTwinStatusSystem.render_process_status_header(results)
 BioTwinStatusSystem.render_parameter_metrics_grid(latest_snapshot.parameters)
 
-# NEW HOOK: Automatically saves the historical row tracking states down into your local data folder
+# Automatically saves the historical row tracking states down into your local data folder
 BioTwinStatusSystem.log_process_state_to_file(latest_snapshot.parameters, results)
 
 # -----------------------------------------------------------------------------
@@ -125,17 +156,31 @@ with c2:
     st.plotly_chart(fig_spe, use_container_width="stretch")
 
 # -----------------------------------------------------------------------------
-# 6. AGENTIC AI DECISION-SUPPORT LAYER
+# 6. AGENTIC AI DECISION-SUPPORT LAYER WITH API THROTTLING GUARD
 # -----------------------------------------------------------------------------
 if results["t2_alarm"] or results["spe_alarm"]:
     st.markdown("### 🤖 Groq Autonomous LLM Diagnostic Hub")
     
     if enable_llm_diagnostics:
-        if groq_agent is not None:
-            with st.spinner("Invoking low-latency diagnostic calculation steps..."):
-                st.info(groq_agent.analyze_process_anomaly(latest_snapshot, results))
-        else:
-            st.warning("Groq Client framework offline. Configure GROQ_API_KEY environment variable token to populate this data feed.")
+        current_time = time.time()
+        time_elapsed_since_last_call = current_time - st.session_state.last_llm_call_time
+        
+        if time_elapsed_since_last_call > 30.0 or not st.session_state.cached_diagnostic_report:
+            if groq_agent is not None:
+                with st.spinner("Invoking low-latency diagnostic calculation steps..."):
+                    new_report = groq_agent.analyze_process_anomaly(latest_snapshot, results)
+                    
+                    if "Failed to execute" not in new_report and "Rate limit reached" not in new_report:
+                        st.session_state.cached_diagnostic_report = new_report
+                        st.session_state.last_llm_call_time = current_time
+                    else:
+                        st.error(new_report)
+            else:
+                st.warning("Groq Client framework offline. Configure GROQ_API_KEY environment variable token.")
+        
+        if st.session_state.cached_diagnostic_report:
+            st.info(st.session_state.cached_diagnostic_report)
+            st.caption(f"⏱️ Diagnostic report locked. Next token window refresh available in: {max(0.0, 30.0 - time_elapsed_since_last_call):.1f}s")
     else:
         st.caption("LLM Analysis is currently paused via the sidebar toggle checkbox control.")
 
@@ -148,7 +193,6 @@ st.subheader("📋 Historical Batch Audit File Viewer (`data/processed/`)")
 if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
     try:
         df_audit = pd.read_csv(log_path)
-        # Expose the last 15 rows of sequential data for operator tracking reviews
         st.dataframe(df_audit.tail(15), use_container_width="stretch")
     except Exception:
         st.caption("Refreshing data log file registers...")
