@@ -1,0 +1,20 @@
+# --- Frontend User Interface Components ---
+streamlit>=1.35.0          # Multi-variable real-time dashboard framework
+plotly>=5.22.0             # Dynamic control limit visualization chart engine
+
+# --- Numerical, Data Science, and Machine Learning Backbones ---
+numpy>=1.26.4              # Vector array manipulation and Hotelling T² calculations
+scipy>=1.13.0              # F-distribution and Chi-Square control limit calculations
+scikit-learn>=1.5.0        # Principal Component Analysis (PCA) soft sensor engine
+pandas>=2.2.2              # Historical snapshot trend buffering dataframes
+
+# --- Agentic AI Subsystem ---
+groq>=0.9.0                # Low-latency inference client execution framework
+
+# --- Enterprise Cloud Infrastructure Mappings ---
+pydantic>=1.10.15          # Strict telemetry contract data validations
+boto3>=1.34.120            # AWS ECR & SageMaker model integration interface
+snowflake-connector-python[secure-local-storage]>=3.10.0  # Enterprise warehousing
+
+# --- Verification & Testing Subsystem ---
+pytest>=8.2.0              # High-frequency math and tool integration validations
