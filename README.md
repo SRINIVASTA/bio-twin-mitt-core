@@ -172,3 +172,13 @@ Follow these four terminal commands to provision data, train the models, and spi
 
 ```bash
 # 1. Install localized mathematical, layout, and inference client packages
+pip install streamlit plotly numpy scipy scikit-learn pandas groq pydantic pytest black flake8
+
+# 2. Provision the local mock timeline dataset file (500 historical rows)
+python src/mitt_core/infrastructure/local_csv_exporter.py
+
+# 3. Execute the training loop to calibrate the PCA matrix and export the pickle model
+python src/mitt_core/models/train.py
+
+# 4. Initialize the real-time operational execution console dashboard
+👉 http://localhost:8506```
