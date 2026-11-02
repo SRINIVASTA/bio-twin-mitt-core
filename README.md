@@ -39,6 +39,7 @@ graph TD
         J[prompts.py<br>GxP System Blueprint Guidelines] --> H
         H -->|Deterministic Diagnostic API Call| K[Groq LLM Gateway Cluster<br>qwen/qwen3.8-27b]
         K -->|Return Actionable SOP Markdown| L[st.info Dashboard Report View]
+        L -->|Manual Click Trigger / 5-Min Cron| N[notifier.py<br>SMTP Email Dispatcher]
     end
 
     style Plant_Simulation_Layer fill:#1e2235,stroke:#333,stroke-width:1px
@@ -62,6 +63,9 @@ graph TD
     
     System_Prompt --> Groq_Inference[Invoke Zero-Temperature Deterministic Completion]
     Groq_Inference --> Markdown_Report[Publish High-Priority Actionable SOP Deviation Report]
+    Markdown_Report --> Notification_Gateway{Notification Type}
+    Notification_Gateway -->|Dynamic 5-Min Interval or Immediate Anomaly Alert| Email[SMTP Email Dispatch to Stakeholders]
+    Notification_Gateway -->|Manual Operator Trigger| Email
 ```
 
 ---
@@ -77,7 +81,7 @@ bio-twin-mitt-core/
 │
 ├── .streamlit/
 │   ├── config.toml                    # Production UI styling, theme colors, & timeouts
-│   └── secrets.toml                   # Local storage container for GROQ_API_KEY
+│   └── secrets.toml                   # Local storage container for GROQ_API_KEY & SMTP credentials
 │
 ├── config/
 │   ├── __init__.py
@@ -106,10 +110,11 @@ bio-twin-mitt-core/
 │   │   │   ├── knowledge_graph.py     # Structural Bioprocess ontological bounds
 │   │   │   └── telemetry.py           # Strict Pydantic models for sensor validation
 │   │   │
-│   │   ├── infrastructure/            # --- Plant Telemetry Simulator ---
+│   │   ├── infrastructure/            # --- Plant Telemetry Simulator & Notifications ---
 │   │   │   ├── __init__.py
 │   │   │   ├── local_csv_exporter.py  # Local mock dataset provisioner utility
-│   │   │   └── telemetry_pi.py        # High-frequency IIoT stream simulator (Historian)
+│   │   │   ├── telemetry_pi.py        # High-frequency IIoT stream simulator (Historian)
+│   │   │   └── notifier.py            # SMTP notification dispatcher (Manual & 5-min intervals)
 │   │   │
 │   │   └── models/                    # --- Latent Variable Soft Sensors ---
 │   │       ├── __init__.py
@@ -129,7 +134,7 @@ bio-twin-mitt-core/
 │
 ├── .env.example                       # Local environment credential blueprint
 ├── .gitignore
-├── app.py                             # Central Streamlit layout entrypoint
+├── app.py                             # Central Streamlit layout entrypoint with scheduled loops
 └── requirements.txt                   # Pinned localized build packages
 ```
 
@@ -146,9 +151,10 @@ bio-twin-mitt-core/
 * **`knowledge_graph.py`:** Implements an in-memory semantic network mapping relationships between critical assets, equipment dependencies, Critical Process Parameters (CPPs), and Critical Quality Attributes (CQAs).
 * **`telemetry.py`:** Leverages strict Pydantic schemas to validate and serialize data streams before they reach analytical or reporting engines.
 
-### 🌐 Plant Telemetry Simulation (`src/mitt_core/infrastructure/`)
+### 🌐 Plant Telemetry & Communication (`src/mitt_core/infrastructure/`)
 * **`telemetry_pi.py`:** Models a high-frequency plant data stream, generating normal bioprocess variables with realistic noise or active mechanical fault profiles on demand.
 * **`local_csv_exporter.py`:** Standardizes mock environment setups by auto-generating a 500-row timeline CSV that maps directly to target bioprocess tag arrays.
+* **`notifier.py`:** Handles external email alert operations. Supports **on-demand manual reporting via dashboard buttons** as well as a **dynamic background thread that dispatches comprehensive process summaries every 5 minutes** (or immediately if a high-priority PCA anomaly breach is registered before the timer ends).
 
 ### 📈 Soft Sensors & Machine Learning (`src/mitt_core/models/`)
 * **`pca_detector.py`:** Multivariable tracking engine that calculates real-time Hotelling’s T² and Squared Prediction Error (SPE) boundaries using frozen calculation variance parameters to eliminate dynamic runtime exceptions.
@@ -166,13 +172,3 @@ Follow these four terminal commands to provision data, train the models, and spi
 
 ```bash
 # 1. Install localized mathematical, layout, and inference client packages
-pip install streamlit plotly numpy scipy scikit-learn pandas groq pydantic pytest black flake8
-
-# 2. Provision the local mock timeline dataset file (500 historical rows)
-python src/mitt_core/infrastructure/local_csv_exporter.py
-
-# 3. Execute the training loop to calibrate the PCA matrix and export the pickle model
-python src/mitt_core/models/train.py
-
-# 4. Initialize the real-time operational execution console dashboard
-👉 http://localhost:8506```
