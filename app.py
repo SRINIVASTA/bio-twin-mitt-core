@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+import time
 
 from src.mitt_core.infrastructure.telemetry_pi import PIHistorianSimulator
 from src.mitt_core.models.pca_detector import PCABioprocessDetector
@@ -38,14 +39,12 @@ pca_detector, groq_agent = setup_runtime_detector_and_agent()
 
 with st.sidebar:
     st.header("🎛 Process Control Interface")
-    # Streamlit buttons accept use_container_width="stretch" or use_container_width="content" in latest versions
     if st.button("🚨 Inject Mechanical Agitation Anomaly", use_container_width="stretch"):
         st.session_state.fault_injected = True
     if st.button("🟢 Reset to Normal Golden Envelope Conditions", use_container_width="stretch"):
         st.session_state.fault_injected = False
         st.session_state.metrics_history = []
 
-# Telemetry acquisition stream loop segment execution blocks
 simulator = PIHistorianSimulator()
 stream = simulator.stream_live_telemetry(inject_fault=st.session_state.fault_injected)
 latest_snapshot = next(stream)
@@ -62,7 +61,6 @@ if len(st.session_state.metrics_history) > STATISTICAL_CONTROL_LIMITS["buffer_me
 
 df_history = pd.DataFrame(st.session_state.metrics_history)
 
-# Component screen layout execution
 BioTwinStatusSystem.render_process_status_header(results)
 BioTwinStatusSystem.render_parameter_metrics_grid(latest_snapshot.parameters)
 
@@ -70,7 +68,6 @@ st.markdown("---")
 c1, c2 = st.columns(2)
 with c1:
     fig_t2 = BioTwinControlCharts.build_statistical_trend_chart(df_history, "t2_value", "t2_ucl", "Hotelling T² Latent Variability Metrics", "#0066CC")
-    # Pass compliant structural layout parameter flags to plotly rendering engine
     st.plotly_chart(fig_t2, use_container_width="stretch")
 with c2:
     fig_spe = BioTwinControlCharts.build_statistical_trend_chart(df_history, "spe_value", "spe_ucl", "Squared Prediction Error (SPE) Multi-Residual Trends", "#FF9900")
@@ -84,6 +81,5 @@ if results["t2_alarm"] or results["spe_alarm"]:
     else:
         st.warning("Groq Client framework offline. Configure GROQ_API_KEY environment variable token to populate this data feed.")
 
-import time
 time.sleep(STATISTICAL_CONTROL_LIMITS["sampling_interval_seconds"])
 st.rerun()
