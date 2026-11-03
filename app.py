@@ -291,19 +291,38 @@ if st.session_state.cached_diagnostic_report:
         st.caption("⏸️ Simulation paused. Diagnostic reporting states frozen.")
 
 # -----------------------------------------------------------------------------
-# 7. HISTORICAL BATCH AUDIT FILE VIEWER LAYER
+# 7. HISTORICAL BATCH AUDIT FILE VIEWER LAYER (FIXED HEADERS)
 # -----------------------------------------------------------------------------
 st.markdown("---")
 st.subheader("📋 Historical Batch Audit File Viewer (`data/processed/`)")
 
 if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
     try:
-        df_audit = pd.read_csv(log_path)
+        # Read the raw log file without headers to prevent skipping the first line
+        df_audit = pd.read_csv(log_path, header=None)
+        
+        # Explicitly map the structured GxP tag layout metadata
+        column_headers = [
+            "Timestamp", 
+            "Alarm Status", 
+            "Temperature (°C)", 
+            "pH", 
+            "Hotelling T²", 
+            "SPE Residual", 
+            "Biomass (g/L)", 
+            "Agitation (RPM)", 
+            "Feed Rate (mL/min)"
+        ]
+        
+        # Guard column length mismatches safely
+        df_audit.columns = column_headers[:len(df_audit.columns)]
+        
+        # Render the dataframe with proper headers
         st.dataframe(df_audit.tail(15), use_container_width="stretch")
     except Exception:
         st.caption("Refreshing data log file registers...")
-    else:
-        st.caption("Awaiting initial file generation sequences. System loop logging is running silently.")
+else:
+    st.caption("Awaiting initial file generation sequences. System loop logging is running silently.")
 
 # -----------------------------------------------------------------------------
 # 8. RERUN LOOP OR FREEZE CONTROL
