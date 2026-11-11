@@ -57,12 +57,12 @@ flowchart TD
     e12@{ animate: true }
     e13@{ animate: true }
 
-    style Plant_Simulation_Layer fill:#1e2235,stroke:#333,stroke-width:1px
-    style Analytical_Engine_Layer fill:#141724,stroke:#0066CC,stroke-width:2px
-    style User_Interface_Layer fill:#1e2235,stroke:#333,stroke-width:1px
-    style Agentic_Decision_Support fill:#162b23,stroke:#00cc66,stroke-width:2px
+    %% Clean Light-Friendly Subgraph Styling (No Black Boxes)
+    style Plant_Simulation_Layer fill:#f4f6f9,stroke:#90a4ae,stroke-width:1.5px,color:#1a1a1a
+    style Analytical_Engine_Layer fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#1a1a1a
+    style User_Interface_Layer fill:#fff8e1,stroke:#f9a825,stroke-width:1.5px,color:#1a1a1a
+    style Agentic_Decision_Support fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1a1a1a
 ```
-
 
 ### Anomaly Diagnostic Logic Flow
 The Agentic Subsystem classifies multivariate breaches deterministically based on statistical projection matrices:
@@ -83,13 +83,13 @@ flowchart TD
     Notification_Gateway -->|Dynamic 5-Min Interval or Immediate Anomaly Alert| Email[SMTP Email Dispatch to Stakeholders]
     Notification_Gateway -->|Manual Operator Trigger| Email
 
-    %% Matching Dark-Theme Node Styling
-    style Start fill:#2c1618,stroke:#ff5252,stroke-width:2px
-    style Anomaly_Evaluation fill:#141724,stroke:#0066CC,stroke-width:2px
-    style Shift fill:#2b2310,stroke:#ffb300,stroke-width:1.5px
-    style Outlier fill:#2c1618,stroke:#ff7043,stroke-width:1.5px
-    style Groq_Inference fill:#162b23,stroke:#00cc66,stroke-width:2px
-    style Email fill:#1e2235,stroke:#64b5f6,stroke-width:2px
+    %% Clean Light-Friendly Node Styling (No Black Boxes)
+    style Start fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#1a1a1a
+    style Anomaly_Evaluation fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#1a1a1a
+    style Shift fill:#fff8e1,stroke:#f57c00,stroke-width:1.5px,color:#1a1a1a
+    style Outlier fill:#fbe9e7,stroke:#e64a19,stroke-width:1.5px,color:#1a1a1a
+    style Groq_Inference fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1a1a1a
+    style Email fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#1a1a1a
 ```
 
 ---
