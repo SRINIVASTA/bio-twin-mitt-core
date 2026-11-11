@@ -16,31 +16,46 @@ The architecture is explicitly optimized to ingest streaming industrial internet
 The diagram below illustrates how raw plant data streams through the validation and statistical process control layers before reaching the low-latency agentic diagnostic engine:
 
 ```mermaid
-graph TD
+flowchart TD
     subgraph Plant_Simulation_Layer [Plant Simulation Layer]
-        A[telemetry_pi.py<br>IIoT Historian Simulator] -->|Raw Parameter Maps| B[telemetry.py<br>Pydantic Validator]
+        A[telemetry_pi.py<br>IIoT Historian Simulator] e1@-->|Raw Parameter Maps| B[telemetry.py<br>Pydantic Validator]
     end
 
     subgraph Analytical_Engine_Layer [Analytical Engine Layer]
-        B -->|Validated Pydantic Payload| C[app.py<br>Central Gateway Routing]
-        C -->|Feature Vector Matrix| D[pca_detector.py<br>High-Speed Tracking Engine]
-        D -->|Compute Scores| E{SPC Limit Checker<br>Hotelling T² & SPE}
+        B e2@-->|Validated Pydantic Payload| C[app.py<br>Central Gateway Routing]
+        C e3@-->|Feature Vector Matrix| D[pca_detector.py<br>High-Speed Tracking Engine]
+        D e4@-->|Compute Scores| E{SPC Limit Checker<br>Hotelling T² & SPE}
     end
 
     subgraph User_Interface_Layer [User Interface Layer]
-        E -->|Safe State| F[status.py<br>Render Validated State]
-        F --> G[charts.py<br>Render Stable Control Limits]
-        C -->|Write Operation Tick| M[(Local CSV Audit Trail<br>Data Folder)]
+        E e5@-->|Safe State| F[status.py<br>Render Validated State]
+        F e6@--> G[charts.py<br>Render Stable Control Limits]
+        C e7@-->|Write Operation Tick| M[(Local CSV Audit Trail<br>Data Folder)]
     end
 
     subgraph Agentic_Decision_Support [Agentic AI Subsystem]
-        E -->|Alarm Breach Tripped = True| H[engine.py<br>Groq Agent Runtime Engine]
-        I[type-safe key mappings<br>Graph Ontology Layer] -->|Semantic Bounds & SOPs| H
-        J[prompts.py<br>GxP System Blueprint Guidelines] --> H
-        H -->|Deterministic Diagnostic API Call| K[Groq LLM Gateway Cluster<br>qwen/qwen3.8-27b]
-        K -->|Return Actionable SOP Markdown| L[st.info Dashboard Report View]
-        L -->|Manual Click Trigger / 5-Min Cron| N[notifier.py<br>SMTP Email Dispatcher]
+        E e8@-->|Alarm Breach Tripped = True| H[engine.py<br>Groq Agent Runtime Engine]
+        I[type-safe key mappings<br>Graph Ontology Layer] e9@-->|Semantic Bounds & SOPs| H
+        J[prompts.py<br>GxP System Blueprint Guidelines] e10@--> H
+        H e11@-->|Deterministic Diagnostic API Call| K[Groq LLM Gateway Cluster<br>qwen/qwen3.8-27b]
+        K e12@-->|Return Actionable SOP Markdown| L[st.info Dashboard Report View]
+        L e13@-->|Manual Click Trigger / 5-Min Cron| N[notifier.py<br>SMTP Email Dispatcher]
     end
+
+    %% Running Flow Animation Definitions
+    e1@{ animate: true }
+    e2@{ animate: true }
+    e3@{ animate: true }
+    e4@{ animate: true }
+    e5@{ animate: true }
+    e6@{ animate: true }
+    e7@{ animate: true }
+    e8@{ animate: true }
+    e9@{ animate: true }
+    e10@{ animate: true }
+    e11@{ animate: true }
+    e12@{ animate: true }
+    e13@{ animate: true }
 
     style Plant_Simulation_Layer fill:#1e2235,stroke:#333,stroke-width:1px
     style Analytical_Engine_Layer fill:#141724,stroke:#0066CC,stroke-width:2px
@@ -48,11 +63,12 @@ graph TD
     style Agentic_Decision_Support fill:#162b23,stroke:#00cc66,stroke-width:2px
 ```
 
+
 ### Anomaly Diagnostic Logic Flow
 The Agentic Subsystem classifies multivariate breaches deterministically based on statistical projection matrices:
 
 ```mermaid
-graph TD
+flowchart TD
     Start[Soft Sensor Inference Breach] --> Anomaly_Evaluation{Evaluate Alarm Arrays}
     
     Anomaly_Evaluation -->|T² Alarm = True <br> SPE Alarm = False| Shift[Process Drift / Kinetic Shift<br>Operating outside Golden Envelope]
@@ -66,6 +82,14 @@ graph TD
     Markdown_Report --> Notification_Gateway{Notification Type}
     Notification_Gateway -->|Dynamic 5-Min Interval or Immediate Anomaly Alert| Email[SMTP Email Dispatch to Stakeholders]
     Notification_Gateway -->|Manual Operator Trigger| Email
+
+    %% Matching Dark-Theme Node Styling
+    style Start fill:#2c1618,stroke:#ff5252,stroke-width:2px
+    style Anomaly_Evaluation fill:#141724,stroke:#0066CC,stroke-width:2px
+    style Shift fill:#2b2310,stroke:#ffb300,stroke-width:1.5px
+    style Outlier fill:#2c1618,stroke:#ff7043,stroke-width:1.5px
+    style Groq_Inference fill:#162b23,stroke:#00cc66,stroke-width:2px
+    style Email fill:#1e2235,stroke:#64b5f6,stroke-width:2px
 ```
 
 ---
