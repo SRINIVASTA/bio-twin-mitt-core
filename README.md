@@ -205,7 +205,10 @@ python src/mitt_core/infrastructure/local_csv_exporter.py
 python src/mitt_core/models/train.py
 
 # 4. Initialize the real-time operational execution console dashboard
-👉 http://localhost:8506```
+streamlit run app.py --server.port 8506
+```
+
+Once running, access the console in your browser at 👉 **http://localhost:8506**
 
 ---
 
@@ -216,6 +219,7 @@ This project is a simulated biopharmaceutical manufacturing environment (Pharma 
 Users are responsible for securing their own `GROQ_API_KEY` and SMTP email credentials locally (such as within `.streamlit/secrets.toml` or `.env`), adhering to Groq API rate limits and terms of service, and ensuring that automated email notifications are only directed to authorized recipients.
 
 ---
+
 ## 🛡️ License, Copyright & Compliance Notices
 
 **All Rights Reserved © 2026 T A Srinivas.**
@@ -228,9 +232,8 @@ For corporate licensing, enterprise deployment, or commercial inquiries, please 
 
 ### 🌐 Let’s Connect
 
-- [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/srinivas-t-a-557637119/)  
-- [![Kaggle](https://img.shields.io/badge/Kaggle-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/srinivasta)  
-- [![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:tasrinivass@gmail.com)  
-- [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/srinivasta)
-- [![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=website&logoColor=white)](https://srinivasta.github.io)
-
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/srinivas-t-a-557637119/)
+[![Kaggle](https://img.shields.io/badge/Kaggle-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/srinivasta)
+[![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:tasrinivass@gmail.com)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/srinivasta)
+[![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=website&logoColor=white)](https://srinivasta.github.io)
