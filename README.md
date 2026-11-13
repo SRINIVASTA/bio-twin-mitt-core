@@ -205,10 +205,10 @@ python src/mitt_core/infrastructure/local_csv_exporter.py
 python src/mitt_core/models/train.py
 
 # 4. Initialize the real-time operational execution console dashboard
-streamlit run app.py --server.port 8506
+streamlit run app.py --server.port 8501
 ```
 
-Once running, access the console in your browser at 👉 **http://localhost:8506**
+Once running, access the console in your browser at 👉 **http://localhost:8501**
 
 ---
 
