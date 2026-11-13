@@ -206,3 +206,28 @@ python src/mitt_core/models/train.py
 
 # 4. Initialize the real-time operational execution console dashboard
 👉 http://localhost:8506```
+
+## Disclaimer
+
+This project is a simulated biopharmaceutical manufacturing environment (Pharma 4.0) intended strictly for educational, research, and proof-of-concept demonstration purposes. It relies on synthetic IIoT telemetry and should not be used for real-world clinical production, live process control, or validated GxP decision-making without independent regulatory verification.
+
+Users are responsible for securing their own `GROQ_API_KEY` and SMTP email credentials locally (such as within `.streamlit/secrets.toml` or `.env`), adhering to Groq API rate limits and terms of service, and ensuring that automated email notifications are only directed to authorized recipients.
+---
+## 🛡️ License, Copyright & Compliance Notices
+
+**All Rights Reserved © 2026 T A Srinivas.**
+
+> **Strict Intellectual Property Notice:** This repository is strictly for portfolio viewing and technical evaluation purposes. **DO NOT COPY, CLONE, FORK, OR REDISTRIBUTE** this source code, architecture, or documentation. Stolen copies or unauthorized forks will be reported immediately for a **GitHub DMCA copyright takedown**.
+
+For corporate licensing, enterprise deployment, or commercial inquiries, please contact **`tasrinivass@gmail.com`**.
+
+* **Lead Architect & Developer:** [Srinivasta](https://github.com/SRINIVASTA)
+
+### 🌐 Let’s Connect
+
+- [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/srinivas-t-a-557637119/)  
+- [![Kaggle](https://img.shields.io/badge/Kaggle-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/srinivasta)  
+- [![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:tasrinivass@gmail.com)  
+- [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/srinivasta)
+- [![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=website&logoColor=white)](https://srinivasta.github.io)
+
