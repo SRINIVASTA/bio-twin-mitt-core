@@ -207,11 +207,14 @@ python src/mitt_core/models/train.py
 # 4. Initialize the real-time operational execution console dashboard
 👉 http://localhost:8506```
 
+---
+
 ## Disclaimer
 
 This project is a simulated biopharmaceutical manufacturing environment (Pharma 4.0) intended strictly for educational, research, and proof-of-concept demonstration purposes. It relies on synthetic IIoT telemetry and should not be used for real-world clinical production, live process control, or validated GxP decision-making without independent regulatory verification.
 
 Users are responsible for securing their own `GROQ_API_KEY` and SMTP email credentials locally (such as within `.streamlit/secrets.toml` or `.env`), adhering to Groq API rate limits and terms of service, and ensuring that automated email notifications are only directed to authorized recipients.
+
 ---
 ## 🛡️ License, Copyright & Compliance Notices
 
