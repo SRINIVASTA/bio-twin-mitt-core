@@ -5,6 +5,11 @@ This repository serves as a self-contained core framework for implementing advan
 
 The architecture is explicitly optimized to ingest streaming industrial internet of things (IIoT) telemetry from an in-memory historian simulator, monitor multi-variable statistical process control (MSPC) boundaries via a lightweight Principal Component Analysis (PCA) tracking matrix, and generate Standard Operating Procedure (SOP) compliant diagnostic rationales using a localized Groq LLM agent loop.
 
+### About
+
+**Pharma 4.0 Bio-Twin console** built with **Streamlit**, **PCA latent soft sensors**, and **Groq LLM diagnostic agents**. Features **real-time IIoT telemetry simulation**, **statistical process control (Hotelling T² & SPE)**, and **automated 5-minute/instant SMTP anomaly alerts**.
+
+
 ### ⭐ Show Your Support
 
 If you like the UI design, system architecture, or biopharmaceutical digital twin engineering behind **Bio-Twin MITT Core**, please consider giving this repository a **Star ⭐** on GitHub! It helps showcase this work and motivates future builds.
