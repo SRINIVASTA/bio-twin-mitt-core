@@ -2,11 +2,16 @@ let anomaly = false;
 const t2Series = new Array();
 const speSeries = new Array();
 
-function drawSeries(canvasId, series, uclVal, lineColor) {
-  const canvas = document.getElementById(canvasId);
+function getCanvas(primaryId, fallbackId) {
+  return document.getElementById(primaryId) || document.getElementById(fallbackId);
+}
+
+function drawSeries(primaryId, fallbackId, series, uclVal, lineColor) {
+  const canvas = getCanvas(primaryId, fallbackId);
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
+  const w = canvas.width || 500;
+  const h = canvas.height || 170;
   const maxVal = 10.0;
 
   ctx.clearRect(0, 0, w, h);
@@ -52,6 +57,7 @@ function triggerFault() {
     '<p><strong>Diagnostic Classification:</strong> Unmodeled Disturbance (Dual T² &amp; SPE Excursion)</p>' +
     '<p><strong>Probable Root-Cause Analysis:</strong> Agitation drive failure or mechanical coupling slip causing RPM to exceed the 130.0 upper limit (~158 RPM), introducing unmodeled shear stress not captured by the baseline PCA model.</p>' +
     '<p><strong>Immediate SOP Corrective Actions:</strong> 1) Manually verify agitator shaft coupling integrity and motor current draw. 2) Inspect agitation_rpm control loop PID parameters against the 110.0–130.0 CPP range.</p>';
+  tick(true);
 }
 
 function resetNormal() {
@@ -61,10 +67,12 @@ function resetNormal() {
   document.getElementById('agentOutput').innerHTML =
     '<h3>🤖 Groq Autonomous LLM Diagnostic Hub</h3>' +
     '<p><strong>Status:</strong> Process restored to Golden Envelope. Hotelling T² and SPE metrics are back inside statistical control limits.</p>';
+  tick(true);
 }
 
-function tick() {
-  if (!document.getElementById('streamToggle').checked) return;
+function tick(force) {
+  const toggle = document.getElementById('streamToggle');
+  if (!force && toggle && !toggle.checked) return;
 
   const now = new Date().toLocaleTimeString('en-GB');
   const temp = (25.0 + (Math.random() - 0.5) * 0.1).toFixed(2);
@@ -88,24 +96,28 @@ function tick() {
     speSeries.shift();
   }
 
-  drawSeries('t2Canvas', t2Series, 6.0, '#58a6ff');
-  drawSeries('speCanvas', speSeries, 4.5, '#3fb950');
+  drawSeries('t2Canvas', 't2Chart', t2Series, 6.0, '#58a6ff');
+  drawSeries('speCanvas', 'speChart', speSeries, 4.5, '#3fb950');
 
   const tbody = document.getElementById('auditBody');
-  const row = document.createElement('tr');
-  const statusText = anomaly ? 'CRITICAL_DUAL_BREACH' : 'GOLDEN_ENVELOPE_VALIDATED';
-  const statusClass = anomaly ? 'tag-breach' : 'tag-ok';
-  row.innerHTML =
-    '<td>' + now + '</td>' +
-    '<td class="' + statusClass + '">' + statusText + '</td>' +
-    '<td>' + temp + '</td>' +
-    '<td>' + ph + '</td>' +
-    '<td>' + rpm + '</td>' +
-    '<td>' + t2 + '</td>' +
-    '<td>' + spe + '</td>';
-  tbody.prepend(row);
-  if (tbody.rows.length > 8) tbody.deleteRow(8);
+  if (tbody) {
+    const row = document.createElement('tr');
+    const statusText = anomaly ? 'CRITICAL_DUAL_BREACH' : 'GOLDEN_ENVELOPE_VALIDATED';
+    const statusClass = anomaly ? 'tag-breach' : 'tag-ok';
+    row.innerHTML =
+      '<td>' + now + '</td>' +
+      '<td class="' + statusClass + '">' + statusText + '</td>' +
+      '<td>' + temp + '</td>' +
+      '<td>' + ph + '</td>' +
+      '<td>' + rpm + '</td>' +
+      '<td>' + t2 + '</td>' +
+      '<td>' + spe + '</td>';
+    tbody.prepend(row);
+    if (tbody.rows.length > 8) tbody.deleteRow(8);
+  }
 }
 
-for (let i = 0; i < 8; i++) tick();
-setInterval(tick, 1500);
+window.addEventListener('DOMContentLoaded', function() {
+  for (let i = 0; i < 8; i++) tick(true);
+  setInterval(function() { tick(false); }, 1500);
+});
