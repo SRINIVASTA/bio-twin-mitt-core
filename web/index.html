@@ -5,15 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bio-Twin MITT Core | Pharma 4.0 Operational Intelligence</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .sim-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-top: 1.5rem;
+    }
+    .sim-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .sim-controls {
+      display: flex;
+      gap: 0.75rem;
+    }
+    .sim-btn {
+      padding: 0.45rem 0.95rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #1e293b;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .sim-btn.active-normal { background: #065f46; border-color: #10b981; color: #ecfdf5; }
+    .sim-btn.active-drift { background: #92400e; border-color: #f59e0b; color: #fffbeb; }
+    .sim-btn.active-fault { background: #991b1b; border-color: #ef4444; color: #fef2f2; }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .metric-tile {
+      background: #0b0f19;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 8px;
+    }
+    .metric-label { font-size: 0.8rem; color: var(--muted); }
+    .metric-value { font-size: 1.4rem; font-weight: 700; margin-top: 0.25rem; }
+    .sop-output {
+      background: #0b0f19;
+      border-left: 4px solid #10b981;
+      padding: 1rem 1.25rem;
+      border-radius: 6px;
+      font-size: 0.92rem;
+      color: #cbd5e1;
+    }
+  </style>
 </head>
 <body>
   <header class="navbar">
     <div class="logo">🧬 Bio-Twin <span>MITT Core</span></div>
     <nav>
-      <a href="#architecture">Architecture</a>
+      <a href="#simulator">Live Preview</a>
       <a href="#features">Capabilities</a>
+      <a href="#architecture">Architecture</a>
+      <a href="https://github.io" target="_blank">Portfolio</a>
       <a href="https://github.com" target="_blank">GitHub</a>
-      <a href="http://localhost:8501" class="btn-primary" target="_blank">Launch Console →</a>
+      <a href="https://streamlit.app" class="btn-primary" target="_blank">Launch Console →</a>
     </nav>
   </header>
 
@@ -26,8 +84,46 @@
         and automate GxP-aligned SOP diagnostic reports using deterministic Groq LLM loops.
       </p>
       <div class="hero-actions">
-        <a href="http://localhost:8501" class="btn-primary" target="_blank">Open Live Streamlit Console</a>
-        <a href="#architecture" class="btn-secondary">Explore System Flow</a>
+        <a href="https://streamlit.app" class="btn-primary" target="_blank">Open Live Streamlit Console</a>
+        <a href="#simulator" class="btn-secondary">Test Interactive Simulator</a>
+      </div>
+    </section>
+
+    <section id="simulator" class="grid-section">
+      <h2>Interactive Soft Sensor &amp; Groq Agent Preview</h2>
+      <p style="color: var(--muted); margin-bottom: 1rem;">
+        Click a bioprocess state below to simulate how the PCA engine evaluates Hotelling's T² &amp; SPE boundaries and triggers the Groq diagnostic agent.
+      </p>
+      <div class="sim-box">
+        <div class="sim-header">
+          <strong>Bioreactor BR-101 Telemetry Stream</strong>
+          <div class="sim-controls">
+            <button id="btn-normal" class="sim-btn active-normal" onclick="setMode('normal')">Normal Golden Envelope</button>
+            <button id="btn-drift" class="sim-btn" onclick="setMode('drift')">T² Kinetic Drift</button>
+            <button id="btn-fault" class="sim-btn" onclick="setMode('fault')">SPE Mechanical Fault</button>
+          </div>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-tile">
+            <div class="metric-label">Hotelling's T² (UCL: 9.49)</div>
+            <div id="val-t2" class="metric-value" style="color: #10b981;">3.42</div>
+          </div>
+          <div class="metric-tile">
+            <div class="metric-label">SPE Residual (UCL: 2.85)</div>
+            <div id="val-spe" class="metric-value" style="color: #10b981;">0.64</div>
+          </div>
+          <div class="metric-tile">
+            <div class="metric-label">Dissolved Oxygen / Temp</div>
+            <div id="val-do" class="metric-value">41.2% • 37.0°C</div>
+          </div>
+          <div class="metric-tile">
+            <div class="metric-label">GxP Alarm Status</div>
+            <div id="val-status" class="metric-value" style="color: #10b981;">IN CONTROL</div>
+          </div>
+        </div>
+        <div id="sop-box" class="sop-output">
+          <strong>Agent Status:</strong> All Critical Process Parameters (CPPs) remain within the Golden Batch envelope. No SOP deviation triggered.
+        </div>
       </div>
     </section>
 
@@ -56,15 +152,55 @@
     <section id="architecture" class="arch-section">
       <h2>Monorepo Structure</h2>
       <pre><code>bio-twin-mitt-core/
-├── src/              # Python PCA Engine, Knowledge Graph & Groq Agent
-├── web/              # Pharma 4.0 Web Portal & Documentation
+├── src/              # Python PCA Engine, Knowledge Graph &amp; Groq Agent
+├── web/              # Pharma 4.0 Web Portal &amp; Interactive Simulator
 ├── app.py            # Streamlit Operational Execution Console
 └── requirements.txt</code></pre>
     </section>
   </main>
 
   <footer>
-    <p>© 2026 T A Srinivas • Bio-Twin Operational Execution Console (Pharma 4.0)</p>
+    <p>© 2026 T A Srinivas • Bio-Twin Operational Execution Console (Pharma 4.0) • <a href="https://github.io" style="color: #60a5fa; text-decoration: none;">srinivasta.github.io</a></p>
   </footer>
+
+  <script>
+    function setMode(mode) {
+      const t2 = document.getElementById('val-t2');
+      const spe = document.getElementById('val-spe');
+      const doTemp = document.getElementById('val-do');
+      const status = document.getElementById('val-status');
+      const sop = document.getElementById('sop-box');
+
+      document.getElementById('btn-normal').className = 'sim-btn';
+      document.getElementById('btn-drift').className = 'sim-btn';
+      document.getElementById('btn-fault').className = 'sim-btn';
+
+      if (mode === 'normal') {
+        document.getElementById('btn-normal').className = 'sim-btn active-normal';
+        t2.textContent = '3.42'; t2.style.color = '#10b981';
+        spe.textContent = '0.64'; spe.style.color = '#10b981';
+        doTemp.textContent = '41.2% • 37.0°C';
+        status.textContent = 'IN CONTROL'; status.style.color = '#10b981';
+        sop.style.borderLeftColor = '#10b981';
+        sop.innerHTML = '<strong>Agent Status:</strong> All Critical Process Parameters (CPPs) remain within the Golden Batch envelope. No SOP deviation triggered.';
+      } else if (mode === 'drift') {
+        document.getElementById('btn-drift').className = 'sim-btn active-drift';
+        t2.textContent = '14.85'; t2.style.color = '#f59e0b';
+        spe.textContent = '1.12'; spe.style.color = '#10b981';
+        doTemp.textContent = '33.8% • 38.4°C';
+        status.textContent = 'T² DRIFT ALARM'; status.style.color = '#f59e0b';
+        sop.style.borderLeftColor = '#f59e0b';
+        sop.innerHTML = '<strong>Groq SOP Diagnostic (SOP-BIO-04):</strong> Hotelling T² exceeded UCL (9.49) while SPE stayed nominal. Indicates metabolic kinetic shift. <em>Action:</em> Verify feed pump rate and sparger O₂ trim; SMTP alert dispatched.';
+      } else {
+        document.getElementById('btn-fault').className = 'sim-btn active-fault';
+        t2.textContent = '6.10'; t2.style.color = '#10b981';
+        spe.textContent = '7.94'; spe.style.color = '#ef4444';
+        doTemp.textContent = '18.5% • 37.1°C';
+        status.textContent = 'SPE OUTLIER BREACH'; status.style.color = '#ef4444';
+        sop.style.borderLeftColor = '#ef4444';
+        sop.innerHTML = '<strong>Groq SOP Diagnostic (SOP-BIO-09):</strong> Severe SPE residual spike (7.94 > 2.85) indicates unmodeled structural disturbance or DO probe fouling. <em>Action:</em> Switch to redundant dissolved oxygen sensor and inspect agitator seal immediately.';
+      }
+    }
+  </script>
 </body>
 </html>
