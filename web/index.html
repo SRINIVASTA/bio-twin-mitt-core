@@ -4,95 +4,66 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bio-Twin Operational Execution Console | Pharma 4.0</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://jsdelivr.net"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0e1117;
+      color: #e6edf3;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .topbar {
+      height: 48px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 0 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      flex-shrink: 0;
+    }
+    .topbar-title { font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .badge {
+      background: rgba(46, 160, 67, 0.15);
+      border: 1px solid #2ea043;
+      color: #56d364;
+      font-size: 0.72rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .topbar-links { display: flex; gap: 1rem; align-items: center; }
+    .topbar-links a { color: #58a6ff; text-decoration: none; font-size: 0.85rem; }
+    .topbar-links a:hover { text-decoration: underline; }
+    iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background: #0e1117;
+    }
+  </style>
 </head>
 <body>
-  <aside class="sidebar">
-    <div>
-      <h3>🎛️ Simulation Engine Control</h3>
-      <div class="toggle-row">
-        <span>Active Bioprocess Stream</span>
-        <input type="checkbox" id="streamToggle" checked />
-      </div>
+  <header class="topbar">
+    <div class="topbar-title">
+      🧬 Bio-Twin MITT Core
+      <span class="badge">LIVE PYTHON ENGINE</span>
     </div>
-
-    <div>
-      <h3>⚙️ Process Control Interface</h3>
-      <button class="control-btn danger" onclick="triggerFault()">⚠️ Inject Mechanical Agitation Anomaly</button>
-      <button class="control-btn" onclick="resetNormal()">✅ Reset to Normal Golden Envelope</button>
+    <div class="topbar-links">
+      <a href="https://github.io" target="_blank">Portfolio</a>
+      <a href="https://github.com" target="_blank">GitHub Repo</a>
+      <a href="https://bio-twin-mitt-core-wers3rq8bmsfxea8ggaq7a.streamlit.app/" target="_blank">Open Direct App ↗</a>
     </div>
+  </header>
 
-    <div>
-      <h3>🤖 AI Agent Settings</h3>
-      <p class="sidebar-note">Deterministic Groq Diagnostic Loop (Zero-Temp) active on UCL excursion.</p>
-    </div>
-
-    <div class="sidebar-footer">
-      Pharma 4.0 Bio-Twin Web Console<br/>
-      <a href="https://github.io">← Back to srinivasta.github.io</a>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div class="top-bar">
-      <div>
-        <h1>🧬 Bio-Twin Operational Execution Console</h1>
-        <p>Manufacturing Intelligence &amp; Technology Transformation Framework Layer</p>
-      </div>
-      <div class="nav-links">
-        <a href="https://github.com" target="_blank">GitHub Repo</a>
-        <a href="https://streamlit.app" class="primary" target="_blank">Open Full Python App ↗</a>
-      </div>
-    </div>
-
-    <div id="banner" class="status-banner">
-      🟢 GOLDEN ENVELOPE VALIDATED: ALL CPPs WITHIN STATISTICAL CONTROL LIMITS
-    </div>
-
-    <div class="kpi-grid">
-      <div class="kpi"><div class="label">Temperature</div><div id="k-temp" class="val">25.02 °C</div></div>
-      <div class="kpi"><div class="label">pH Level</div><div id="k-ph" class="val">6.48</div></div>
-      <div class="kpi"><div class="label">Agitation RPM</div><div id="k-rpm" class="val">120.4 RPM</div></div>
-      <div class="kpi"><div class="label">Aeration Rate</div><div id="k-air" class="val">249.8 L/m</div></div>
-      <div class="kpi"><div class="label">Substrate Feed</div><div id="k-feed" class="val">0.50 kg/hr</div></div>
-    </div>
-
-    <div class="charts-grid">
-      <div class="chart-card">
-        <h4>Hotelling T² Latent Variability Metrics (UCL: 6.0)</h4>
-        <canvas id="t2Chart" height="140"></canvas>
-      </div>
-      <div class="chart-card">
-        <h4>Squared Prediction Error (SPE) Multi-Residual Trends (UCL: 4.5)</h4>
-        <canvas id="speChart" height="140"></canvas>
-      </div>
-    </div>
-
-    <div class="agent-box" id="agentOutput">
-      <h3>🤖 Groq Autonomous LLM Diagnostic Hub</h3>
-      <p><strong>Status:</strong> Monitoring streaming IIoT feature vector matrix. Hotelling T² and SPE scores are well below Upper Control Limits. Ready to generate SOP deviation report on breach.</p>
-    </div>
-
-    <h3 class="section-title">📊 Historical Batch Audit File Viewer (<code>data/processed/</code>)</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Timestamp</th>
-            <th>Operational Status</th>
-            <th>Temp (°C)</th>
-            <th>pH</th>
-            <th>Agitation (RPM)</th>
-            <th>T² Score</th>
-            <th>SPE Score</th>
-          </tr>
-        </thead>
-        <tbody id="auditBody"></tbody>
-      </table>
-    </div>
-  </main>
-
-  <script src="app.js"></script>
+  <iframe
+    src="https://streamlit.app"
+    allow="clipboard-read; clipboard-write"
+    title="Bio-Twin Operational Execution Console">
+  </iframe>
 </body>
 </html>
