@@ -44,6 +44,7 @@ body {
 .sidebar-note {
   font-size: 0.8rem;
   color: var(--muted);
+  line-height: 1.45;
 }
 
 .sidebar-footer {
@@ -59,7 +60,7 @@ body {
 
 .control-btn {
   width: 100%;
-  padding: 0.6rem 0.8rem;
+  padding: 0.65rem 0.85rem;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: #21262d;
@@ -103,7 +104,7 @@ body {
 }
 
 .top-bar h1 {
-  font-size: 1.75rem;
+  font-size: 1.7rem;
 }
 
 .top-bar p {
@@ -136,7 +137,7 @@ body {
   padding: 0.9rem 1.2rem;
   border-radius: 8px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   margin-bottom: 1.5rem;
   background: rgba(46, 160, 67, 0.15);
   border: 1px solid var(--green);
@@ -151,7 +152,7 @@ body {
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
   gap: 1rem;
   margin-bottom: 1.75rem;
 }
@@ -171,14 +172,14 @@ body {
 }
 
 .kpi .val {
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   font-weight: 700;
   margin-top: 0.3rem;
 }
 
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1.25rem;
   margin-bottom: 1.75rem;
 }
@@ -191,9 +192,17 @@ body {
 }
 
 .chart-card h4 {
-  font-size: 0.9rem;
-  margin-bottom: 0.75rem;
+  font-size: 0.88rem;
+  margin-bottom: 0.65rem;
   color: var(--text);
+}
+
+canvas {
+  width: 100%;
+  height: 170px;
+  display: block;
+  background: #131720;
+  border-radius: 6px;
 }
 
 .agent-box {
@@ -208,7 +217,7 @@ body {
 
 .agent-box h3 {
   color: #79c0ff;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
   font-size: 1rem;
 }
 
