@@ -1,9 +1,9 @@
 let anomaly = false;
-const labels = [];
-const t2Data = [];
-const speData = [];
-const uclT2 = [];
-const uclSpe = [];
+const labels = new Array();
+const t2Data = new Array();
+const speData = new Array();
+const uclT2 = new Array();
+const uclSpe = new Array();
 
 const chartOpts = {
   responsive: true,
@@ -18,11 +18,11 @@ const chartOpts = {
 const t2Chart = new Chart(document.getElementById('t2Chart'), {
   type: 'line',
   data: {
-    labels,
-    datasets: [
+    labels: labels,
+    datasets: new Array(
       { label: 'T2_VALUE', data: t2Data, borderColor: '#58a6ff', tension: 0.25, pointRadius: 2 },
-      { label: 'Upper Control Limit', data: uclT2, borderColor: '#f85149', borderDash:, pointRadius: 0 }
-    ]
+      { label: 'Upper Control Limit', data: uclT2, borderColor: '#f85149', borderDash: new Array(5, 5), pointRadius: 0 }
+    )
   },
   options: chartOpts
 });
@@ -30,11 +30,11 @@ const t2Chart = new Chart(document.getElementById('t2Chart'), {
 const speChart = new Chart(document.getElementById('speChart'), {
   type: 'line',
   data: {
-    labels,
-    datasets: [
+    labels: labels,
+    datasets: new Array(
       { label: 'SPE_VALUE', data: speData, borderColor: '#3fb950', tension: 0.25, pointRadius: 2 },
-      { label: 'Upper Control Limit', data: uclSpe, borderColor: '#f85149', borderDash:, pointRadius: 0 }
-    ]
+      { label: 'Upper Control Limit', data: uclSpe, borderColor: '#f85149', borderDash: new Array(5, 5), pointRadius: 0 }
+    )
   },
   options: chartOpts
 });
@@ -64,7 +64,7 @@ function resetNormal() {
 function tick() {
   if (!document.getElementById('streamToggle').checked) return;
 
-  const now = new Date().toTimeString().split(' ')[0];
+  const now = new Date().toLocaleTimeString('en-GB');
   const temp = (25.0 + (Math.random() - 0.5) * 0.1).toFixed(2);
   const ph = (6.48 + (Math.random() - 0.5) * 0.06).toFixed(2);
   const rpm = anomaly ? (158 + Math.random() * 6).toFixed(2) : (120 + (Math.random() - 0.5) * 3).toFixed(2);
