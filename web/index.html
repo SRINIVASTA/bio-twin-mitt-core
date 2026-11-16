@@ -1,97 +1,144 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bio-Twin Operational Execution Console | Pharma 4.0</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <aside class="sidebar">
-    <div>
-      <h3>🎛️ Simulation Engine Control</h3>
-      <div class="toggle-row">
-        <span>Active Bioprocess Stream</span>
-        <input type="checkbox" id="streamToggle" checked />
-      </div>
-    </div>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bio-Twin Operational Execution Console | Pharma 4.0</title>
+    <link
+      rel="stylesheet"
+      href="https://jsdelivr.net"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://jsdelivr.net"></script>
+    <script>
+      stlite.mount(
+        {
+          requirements: ["pandas", "numpy", "plotly"],
+          entrypoint: "streamlit_app.py",
+          files: {
+            "streamlit_app.py": `
+import time
+import datetime
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
 
-    <div>
-      <h3>⚙️ Process Control Interface</h3>
-      <button class="control-btn danger" onclick="triggerFault()">⚠️ Inject Mechanical Agitation Anomaly</button>
-      <button class="control-btn" onclick="resetNormal()">✅ Reset to Normal Golden Envelope</button>
-    </div>
+st.set_page_config(
+    page_title="Bio-Twin Operational Execution Console",
+    page_icon="🧬",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-    <div>
-      <h3>🤖 AI Agent Settings</h3>
-      <p class="sidebar-note">Deterministic Groq Diagnostic Loop (Zero-Temp) active on UCL excursion.</p>
-    </div>
+if "anomaly" not in st.session_state:
+    st.session_state.anomaly = False
+if "history" not in st.session_state:
+    st.session_state.history = pd.DataFrame(columns=[
+        "timestamp", "operational_status", "temperature_c", "ph",
+        "agitation_rpm", "aeration_lmin", "substrate_feed_kghr",
+        "t2_score", "spe_score"
+    ])
 
-    <div class="sidebar-footer">
-      Pharma 4.0 Bio-Twin Web Console<br/>
-      <a href="https://github.io">← Back to srinivasta.github.io</a>
-    </div>
-  </aside>
+with st.sidebar:
+    st.markdown("### 🎛️ Simulation Engine Control")
+    running = st.toggle("Run Active Bioprocess Stream", value=True)
 
-  <main class="main">
-    <div class="top-bar">
-      <div>
-        <h1>🧬 Bio-Twin Operational Execution Console</h1>
-        <p>Manufacturing Intelligence &amp; Technology Transformation Framework Layer</p>
-      </div>
-      <div class="nav-links">
-        <a href="https://github.com" target="_blank">GitHub Repo</a>
-        <a href="https://streamlit.app" class="primary" target="_blank">Open Full Python App ↗</a>
-      </div>
-    </div>
+    st.markdown("---")
+    st.markdown("### ⚙️ Process Control Interface")
+    if st.button("⚠️ Inject Mechanical Agitation Anomaly", use_container_width=True):
+        st.session_state.anomaly = True
+    if st.button("✅ Reset to Normal Golden Envelope", use_container_width=True):
+        st.session_state.anomaly = False
 
-    <div id="banner" class="status-banner">
-      🟢 GOLDEN ENVELOPE VALIDATED: ALL CPPs WITHIN STATISTICAL CONTROL LIMITS
-    </div>
+    st.markdown("---")
+    st.markdown("### 🤖 AI Agent Settings")
+    enable_ai = st.checkbox("Enable Groq LLM Analysis", value=True)
+    st.caption("[← Back to srinivasta.github.io](https://github.io) | [GitHub Repo](https://github.com)")
 
-    <div class="kpi-grid">
-      <div class="kpi"><div class="label">Temperature</div><div id="k-temp" class="val">25.02 °C</div></div>
-      <div class="kpi"><div class="label">pH Level</div><div id="k-ph" class="val">6.48</div></div>
-      <div class="kpi"><div class="label">Agitation RPM</div><div id="k-rpm" class="val">120.4 RPM</div></div>
-      <div class="kpi"><div class="label">Aeration Rate</div><div id="k-air" class="val">249.8 L/m</div></div>
-      <div class="kpi"><div class="label">Substrate Feed</div><div id="k-feed" class="val">0.50 kg/hr</div></div>
-    </div>
+st.title("🧬 Bio-Twin Operational Execution Console")
+st.caption("Manufacturing Intelligence & Technology Transformation Framework Layer")
 
-    <div class="charts-grid">
-      <div class="chart-card">
-        <h4>Hotelling T² Latent Variability Metrics (Blue) vs UCL 6.0 (Red)</h4>
-        <canvas id="t2Canvas" width="500" height="170"></canvas>
-      </div>
-      <div class="chart-card">
-        <h4>Squared Prediction Error SPE (Green) vs UCL 4.5 (Red)</h4>
-        <canvas id="speCanvas" width="500" height="170"></canvas>
-      </div>
-    </div>
+now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+is_fault = st.session_state.anomaly
 
-    <div class="agent-box" id="agentOutput">
-      <h3>🤖 Groq Autonomous LLM Diagnostic Hub</h3>
-      <p><strong>Status:</strong> Monitoring streaming IIoT feature vector matrix. Hotelling T² and SPE scores are well below Upper Control Limits. Ready to generate SOP deviation report on breach.</p>
-    </div>
+temp = round(25.0 + np.random.normal(0, 0.04), 2)
+ph = round(6.48 + np.random.normal(0, 0.02), 2)
+rpm = round(158.0 + np.random.normal(0, 2.5), 2) if is_fault else round(120.5 + np.random.normal(0, 1.2), 2)
+air = round(250.0 + np.random.normal(0, 0.8), 2)
+feed = round(0.50 + np.random.normal(0, 0.008), 2)
+t2 = round(8.45 + np.random.normal(0, 0.25), 2) if is_fault else round(2.25 + np.random.normal(0, 0.12), 2)
+spe = round(6.12 + np.random.normal(0, 0.22), 2) if is_fault else round(1.50 + np.random.normal(0, 0.08), 2)
+status = "CRITICAL_DUAL_BREACH" if is_fault else "GOLDEN_ENVELOPE_VALIDATED"
 
-    <h3 class="section-title">📊 Historical Batch Audit File Viewer (<code>data/processed/</code>)</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Timestamp</th>
-            <th>Operational Status</th>
-            <th>Temp (°C)</th>
-            <th>pH</th>
-            <th>Agitation (RPM)</th>
-            <th>T² Score</th>
-            <th>SPE Score</th>
-          </tr>
-        </thead>
-        <tbody id="auditBody"></tbody>
-      </table>
-    </div>
-  </main>
+new_row = pd.DataFrame([{
+    "timestamp": now_str,
+    "operational_status": status,
+    "temperature_c": temp,
+    "ph": ph,
+    "agitation_rpm": rpm,
+    "aeration_lmin": air,
+    "substrate_feed_kghr": feed,
+    "t2_score": t2,
+    "spe_score": spe
+}])
 
-  <script src="app.js"></script>
-</body>
+st.session_state.history = pd.concat([st.session_state.history, new_row], ignore_index=True).tail(25)
+df = st.session_state.history
+
+if is_fault:
+    st.error("🔴 CRITICAL GxP STATUS ALARM: PROCESS SHIFT & RESIDUAL EXCURSION BREACH DETECTED")
+else:
+    st.success("🟢 GOLDEN ENVELOPE VALIDATED: ALL CPPs WITHIN STATISTICAL CONTROL LIMITS")
+
+c1, c2, c3, c4, c5 = st.columns(5)
+c1.metric("TEMPERATURE", f"{temp} °C")
+c2.metric("PH", f"{ph}")
+c3.metric("AGITATION RPM", f"{rpm} RPM")
+c4.metric("AERATION RATE", f"{air} L/min")
+c5.metric("SUBSTRATE FEED RATE", f"{feed} kg/hr")
+
+col_left, col_right = st.columns(2)
+
+with col_left:
+    fig_t2 = go.Figure()
+    fig_t2.add_trace(go.Scatter(x=df["timestamp"], y=df["t2_score"], mode="lines+markers", name="T2_VALUE", line=dict(color="#58a6ff")))
+    fig_t2.add_hline(y=6.0, line_dash="dash", line_color="#f85149", annotation_text="Upper Control Limit")
+    fig_t2.update_layout(title="Hotelling T² Latent Variability Metrics", template="plotly_dark", height=300, margin=dict(l=20, r=20, t=40, b=20), yaxis=dict(range=[0, 10]))
+    st.plotly_chart(fig_t2, use_container_width=True)
+
+with col_right:
+    fig_spe = go.Figure()
+    fig_spe.add_trace(go.Scatter(x=df["timestamp"], y=df["spe_score"], mode="lines+markers", name="SPE_VALUE", line=dict(color="#3fb950")))
+    fig_spe.add_hline(y=4.5, line_dash="dash", line_color="#f85149", annotation_text="Upper Control Limit")
+    fig_spe.update_layout(title="Squared Prediction Error (SPE) Multi-Residual Trends", template="plotly_dark", height=300, margin=dict(l=20, r=20, t=40, b=20), yaxis=dict(range=[0, 10]))
+    st.plotly_chart(fig_spe, use_container_width=True)
+
+st.markdown("### 🤖 Groq Autonomous LLM Diagnostic Hub")
+if enable_ai and is_fault:
+    st.info("""
+**[BATCH ANOMALY REPORT]**
+- **Diagnostic Classification:** Unmodeled Disturbance
+- **Primary Breach Profile:** Simultaneous exceedance of Hotelling T² and SPE limits indicates an unmodeled mechanical disturbance or raw material exception profile.
+- **Probable Root-Cause Analysis:** Agitation drive failure or mechanical coupling slip causing RPM to exceed the 130.0 upper limit, introducing unmodeled shear stress not captured by the baseline PCA model.
+- **Immediate SOP Corrective Actions:** 1) Manually verify agitator shaft coupling integrity and motor current draw. 2) Inspect agitation_rpm control loop PID parameters against the 110.0–130.0 CPP range.
+    """)
+else:
+    st.info("Monitoring streaming IIoT feature vector matrix. Hotelling T² and SPE scores remain inside the Golden Envelope.")
+
+st.markdown("### 📊 Historical Batch Audit File Viewer (data/processed/)")
+st.dataframe(df.iloc[::-1], use_container_width=True)
+
+if running:
+    time.sleep(1.5)
+    st.rerun()
+`
+          }
+        },
+        document.getElementById("root")
+      );
+    </script>
+  </body>
 </html>
