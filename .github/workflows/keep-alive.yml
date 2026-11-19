@@ -9,28 +9,38 @@ jobs:
   wake-streamlit:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install Playwright & Open Streamlit App
-        env:
-          STREAMLIT_URL: ${{ secrets.STREAMLIT_APP_URL }}
+      # 1. Native initialization (Bypasses manual apt-get dependency downloads)
+      - name: Install Playwright Dependencies
         run: |
           npm init -y
           npm install playwright
-          npx playwright install chromium --with-deps
+
+      # 2. Uses official action to safely cache and inject headless chromium
+      - name: Install Playwright Chromium Browser
+        uses: microsoft/playwright-actions@v1
+        with:
+          node-version: '20'
+          
+      - name: Execute Stealth Wake Script
+        env:
+          STREAMLIT_URL: ${{ secrets.STREAMLIT_APP_URL }}
+        run: |
           node -e '
             const { chromium } = require("playwright");
             (async () => {
-              // 1. Bypass automation markers
               const browser = await chromium.launch({ 
                 headless: true,
                 args: ["--disable-blink-features=AutomationControlled"] 
               });
               
-              // 2. Pretend to be a real Chrome browser user
               const context = await browser.newContext({
                 userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
               });
@@ -38,22 +48,21 @@ jobs:
               const page = await context.newPage();
               
               try {
-                console.log("Navigating to:", process.env.STREAMLIT_URL);
-                // 3. Changed to networkidle to let the security scripts settle
+                console.log("Navigating to secure endpoint...");
                 await page.goto(process.env.STREAMLIT_URL, { waitUntil: "networkidle", timeout: 90000 });
                 await page.waitForTimeout(5000);
 
                 const wakeBtn = page.getByRole("button", { name: /(get this app back up|wake up)/i });
                 if (await wakeBtn.isVisible()) {
-                  console.log("App was sleeping. Clicking wake-up button...");
+                  console.log("App state: Sleeping. Dispatched wake-up click event...");
                   await wakeBtn.click();
-                  console.log("Clicked! Waiting for app layout initialization...");
                   await page.waitForTimeout(20000);
+                  console.log("App signaling successfully restored.");
                 } else {
-                  console.log("App is already awake and active, or blocked by a verification wall.");
+                  console.log("App state: Already active or protected by verification wall.");
                 }
               } catch (error) {
-                console.error("Pipeline run exception:", error.message);
+                console.error("Execution layer error:", error.message);
                 process.exit(1);
               } finally {
                 await browser.close();
