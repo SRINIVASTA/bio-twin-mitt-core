@@ -43,7 +43,8 @@ jobs:
               
               try {
                 console.log("Navigating to secure endpoint...");
-                await page.goto(process.env.STREAMLIT_URL, { waitUntil: "networkidle", timeout: 90000 });
+                // Bypassed networkidle block, increased cold start buffer to 2 minutes
+                await page.goto(process.env.STREAMLIT_URL, { waitUntil: "domcontentloaded", timeout: 120000 });
                 await page.waitForTimeout(5000);
 
                 const wakeBtn = page.getByRole("button", { name: /(get this app back up|wake up)/i });
