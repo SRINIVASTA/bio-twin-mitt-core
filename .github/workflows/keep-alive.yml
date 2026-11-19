@@ -17,17 +17,11 @@ jobs:
         with:
           node-version: '20'
 
-      # 1. Native initialization (Bypasses manual apt-get dependency downloads)
-      - name: Install Playwright Dependencies
+      - name: Install Playwright & Browsers
         run: |
           npm init -y
           npm install playwright
-
-      # 2. Uses official action to safely cache and inject headless chromium
-      - name: Install Playwright Chromium Browser
-        uses: microsoft/playwright-actions@v1
-        with:
-          node-version: '20'
+          npx playwright install chromium --with-deps
           
       - name: Execute Stealth Wake Script
         env:
